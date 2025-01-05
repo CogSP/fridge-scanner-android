@@ -63,4 +63,5 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation("androidx.compose.material:material-icons-extended:$1.4.3")
     implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.core.splashscreen)
 }

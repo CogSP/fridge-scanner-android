@@ -99,7 +99,7 @@ fun MainScreen(navController: NavController) {
     ) {
 
         Icon(
-            painter = painterResource(R.drawable.fridge_icon_1_removebg_preview),
+            painter = painterResource(R.drawable.fridge_icon_login),
             contentDescription = "Fridge Logo",
             modifier = Modifier.size(120.dp), // example size
             //tint = MaterialTheme.colorScheme.primary
@@ -157,7 +157,7 @@ fun MainScreen(navController: NavController) {
 
         // Login Button
         Button(
-            onClick = { navController.navigate(Screen.DetailScreen.withArgs(username)) }, //TODO: to substitute with onLoginClicked()
+            onClick = { navController.navigate(Screen.HomePageScreen.withArgs(username)) }, //TODO: to substitute with onLoginClicked()
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),

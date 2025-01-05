@@ -58,7 +58,8 @@ fun Navigation() {
             MainScreen(navController = navController)
         }
         composable(
-            route = Screen.DetailScreen.route + "/{name}",
+            //route = Screen.DetailScreen.route + "/{name}",
+            route = Screen.HomePageScreen.route + "/{name}",
             arguments = listOf(
                 navArgument("name") {
                     type = NavType.StringType
@@ -67,7 +68,8 @@ fun Navigation() {
                 }
             )
         ) { entry ->
-            DetailScreen(name = entry.arguments?.getString("name"), navController = navController, viewModel = fridgeViewModel)
+            //DetailScreen(name = entry.arguments?.getString("name"), navController = navController, viewModel = fridgeViewModel)
+            HomePageScreen(name = entry.arguments?.getString("name"), navController = navController, viewModel = fridgeViewModel)
         }
         composable(
             route = Screen.FridgeScreen.route

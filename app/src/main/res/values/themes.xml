@@ -2,4 +2,12 @@
 <resources>
 
     <style name="Theme.FridgeScanner" parent="android:Theme.Material.Light.NoActionBar" />
+
+
+    <!--<style name="Theme.App.SplashScreen" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/white</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/fridge_logo_splashscreen</item>
+        <item name="postSplashScreenTheme">@style/Theme.FridgeScanner</item>
+    </style>-->
+
 </resources>
