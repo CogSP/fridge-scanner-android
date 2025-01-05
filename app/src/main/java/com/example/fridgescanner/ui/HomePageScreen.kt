@@ -23,6 +23,8 @@ import com.example.fridgescanner.R // Or your actual package R
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
+import androidx.navigation.compose.currentBackStackEntryAsState
+import com.example.fridgescanner.Screen
 import com.example.fridgescanner.viewmodel.FridgeViewModel
 import java.time.LocalTime
 
@@ -52,28 +54,30 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
     val userName = name
     val walletBalance = "₦2,440.30"
     val services = listOf(
-        ServiceItem("Top up", Icons.Default.Phone),
-        ServiceItem("Electricity", Icons.Default.Bolt),
-        ServiceItem("TV", Icons.Default.Tv),
-        ServiceItem("Education", Icons.Default.School)
+        ServiceItem("Qualcosa", Icons.Default.Phone),
+        ServiceItem("Qualcos'altro", Icons.Default.Bolt),
+        ServiceItem("Una Cosa", Icons.Default.Tv),
+        ServiceItem("Feature incredibile", Icons.Default.School)
     )
     val recentTransactions = listOf(
-        TransactionItem("Eko Electrical", "Today, 10:45pm", "-80,000", Icons.Default.ElectricalServices),
-        TransactionItem("DSTV Premium", "Today, 10:45pm", "-80,000", Icons.Default.Tv),
-        TransactionItem("MTN Airtime Topup", "6/2/2022, 10:45pm", "-80,000", Icons.Default.Phone)
+        TransactionItem("Eggs", "Today, 10:45pm", "x2", Icons.Default.Egg),
+        TransactionItem("Milk", "Today, 10:45pm", "x1", Icons.Default.LocalDrink),
+        TransactionItem("Mulino Bianco Pancake", "6/2/2022, 10:45pm", "x3", Icons.Default.Fastfood)
     )
 
     // Bottom navigation state
     var selectedBottomNav by remember { mutableStateOf(0) }
     //val bottomNavItems = listOf("Home", "Bill Payments", "History", "Settings")
-    val bottomNavItems = listOf("Scan New Item", "Home", "Settings")
+    val bottomNavItems = listOf("Home", "Scan New Item", "Fridge", "Settings")
 
     Scaffold(
         bottomBar = {
             BottomNavigationBar(
                 items = bottomNavItems,
                 selectedIndex = selectedBottomNav,
-                onItemSelected = { selectedBottomNav = it }
+                onItemSelected = { selectedBottomNav = it },
+                navController = navController,
+                name = name ?: "Guest"
             )
         }
     ) { innerPadding ->
@@ -101,7 +105,8 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
             ItemsStatusCard(
                 totalItems = allItems.size,
                 expiredCount = expiredItems.size,
-                expiringSoonCount = expiringSoonItems.size
+                expiringSoonCount = expiringSoonItems.size,
+                navController = navController
             )
 
             Spacer(Modifier.height(16.dp))
@@ -118,7 +123,7 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
 
             // Recent transactions
             Text(
-                text = "Recent Transactions",
+                text = "Recent Activities",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(vertical = 8.dp)
@@ -137,7 +142,8 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
 fun ItemsStatusCard(
     totalItems: Int,
     expiredCount: Int,
-    expiringSoonCount: Int
+    expiringSoonCount: Int,
+    navController: NavController
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -153,19 +159,22 @@ fun ItemsStatusCard(
             // Title
             Text(
                 text = "Fridge Overview",
-                style = MaterialTheme.typography.bodyMedium.copy(color = Color.White.copy(alpha = 0.7f))
+                style = MaterialTheme.typography.headlineMedium.copy(
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold
+                )
+
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(Modifier.height(8.dp))
 
             // Show total items
             Text(
                 text = "Total items: $totalItems",
-                style = MaterialTheme.typography.headlineMedium.copy(
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold
+                style = MaterialTheme.typography.bodyMedium.copy(
+                    color = Color.Black,
+                    fontWeight = FontWeight.Medium
                 )
             )
-            Spacer(Modifier.height(8.dp))
 
             // Show expired / expiring soon info
             Text(
@@ -179,7 +188,7 @@ fun ItemsStatusCard(
             Text(
                 text = "Expiring Soon: $expiringSoonCount",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color.Yellow,
+                    color = Color(0xFFFF9800),
                     fontWeight = FontWeight.Medium
                 )
             )
@@ -188,8 +197,8 @@ fun ItemsStatusCard(
 
             // Example 'Manage Items' button
             OutlinedButton(
-                onClick = { /* Navigate to your FridgeScreen or a Manage Items screen */ },
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.White),
+                onClick = { navController.navigate(Screen.FridgeScreen.route) },
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
                 //border = ButtonDefaults.outlinedButtonBorder.copy(brush = Brush.horizontalGradient(colors = listOf(Color(0xFF2E7D32), Color(0xFF2E7D32)))),
                 shape = RoundedCornerShape(50)
             ) {
@@ -259,13 +268,13 @@ fun PromoCard() {
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Qualcosa legato agli sconti",
+                    text = "Buy Fridge Scanner Pro",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
                     //color = Color(0xFF2E7D32)
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    text = "Enjoy 40% off all purchase",
+                    text = "40% off only for today!",
                     style = MaterialTheme.typography.bodyMedium,
                     //color = Color(0xFF2E7D32)
                 )
@@ -318,6 +327,7 @@ fun TransactionRow(item: TransactionItem) {
     }
 }
 
+
 //---------------------------------------
 // Bottom Navigation
 //---------------------------------------
@@ -325,14 +335,19 @@ fun TransactionRow(item: TransactionItem) {
 fun BottomNavigationBar(
     items: List<String>,
     selectedIndex: Int,
-    onItemSelected: (Int) -> Unit
+    onItemSelected: (Int) -> Unit,
+    navController: NavController,
+    name: String
 ) {
+
+    val currentRoute = currentRoute(navController)
+
     // We wrap the NavigationBar in a Column,
     // with a Divider on top for the horizontal line.
     Column {
         // The horizontal line on top:
         Divider(
-            color = Color(0xFFE0E0E0), // a light gray
+            color = Color(0xFFE0E0E0),
             thickness = 1.dp
         )
 
@@ -344,21 +359,50 @@ fun BottomNavigationBar(
                 // Choose icons by label or fallback
                 val icon = when (label) {
                     "Scan New Item" -> Icons.Default.CameraAlt
-                    //"Bill Payments" -> Icons.Default.Receipt
+                    "Fridge" -> Icons.Default.Kitchen
                     "Home" -> Icons.Default.Home
                     "Settings" -> Icons.Default.Settings
                     else -> Icons.Default.Circle
                 }
+
+                val isSelected = currentRoute == getRouteForLabel(label, name)
+
                 NavigationBarItem(
                     icon = { Icon(icon, contentDescription = label) },
                     label = { Text(label, fontSize = 12.sp) },
-                    selected = (index == selectedIndex),
-                    onClick = { onItemSelected(index) },
+                    selected = isSelected,
+                    onClick = {
+                        onItemSelected(index)
+                        navigateToRoute(navController, label, name)
+                    },
                     alwaysShowLabel = true
                 )
             }
         }
     }
+}
+
+
+@Composable
+private fun currentRoute(navController: NavController): String? {
+    val navbackStackEntry by navController.currentBackStackEntryAsState()
+    return navbackStackEntry?.destination?.route
+}
+
+
+private fun getRouteForLabel(label: String, name: String): String {
+    return when (label) {
+        "Home" -> Screen.HomePageScreen.withArgs(name)
+        "Scan New Item" -> Screen.ScanScreen.route
+        "Fridge" -> Screen.FridgeScreen.route
+        "Settings" -> Screen.OptionsScreen.route
+        else -> ""
+    }
+}
+
+
+private fun navigateToRoute(navController: NavController, label: String, name: String) {
+    navController.navigate(getRouteForLabel(label, name))
 }
 
 

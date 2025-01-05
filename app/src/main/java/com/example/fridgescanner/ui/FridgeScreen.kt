@@ -79,193 +79,197 @@ fun FridgeScreen(
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-            .statusBarsPadding()
-            .animateContentSize(),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        // Header section
-        FridgeHeader(
-            title = if (multiSelectMode) "Select Items" else "Your Fridge Items",
-            itemCount = finalItems.size,
-            onRefresh = { viewModel.fetchFridgeItems() }
-        )
+    val bottomNavItems = listOf("Home", "Scan New Item", "Fridge", "Settings")
+    var selectedBottomNav by remember { mutableStateOf(0) }
 
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Search Bar
-        SearchBar(
-            searchQuery = searchQuery,
-            onQueryChange = { query -> viewModel.setSearchQuery(query) }
-        )
-
-        Spacer(modifier = Modifier.height(12.dp))
-
-        // Filters Row
-        if (!multiSelectMode) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                val filters = listOf("All", "Expired", "Expiring Soon", "Normal")
-                filters.forEach { filter ->
-                    Text(
-                        text = filter,
-                        style = MaterialTheme.typography.titleMedium,
-                        color = if (filter == selectedFilter) Color.Black else Color.Gray,
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(16.dp))
-                            .background(
-                                if (filter == selectedFilter) Color(0xFFE0E0E0) else Color.Transparent
-                            )
-                            .clickable { selectedFilter = filter }
-                            .padding(horizontal = 16.dp, vertical = 8.dp)
-                    )
-                }
-            }
-        }
-
-        // ------------------- Dropdown for Ordering -------------------
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-
-            // Show the currently selected option
-            Text(
-                text = "Order: $selectedOrderOption",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray
+    Scaffold(
+        bottomBar = {
+            BottomNavigationBar(
+                items = bottomNavItems,
+                selectedIndex = selectedBottomNav,
+                onItemSelected = { selectedBottomNav = it },
+                navController = navController,
+                name = viewModel.name
             )
-            Spacer(modifier = Modifier.width(8.dp))
-            // The dropdown button
-            OutlinedButton(
-                onClick = { expanded = true },
-                shape = RoundedCornerShape(8.dp),
-            ) {
-                Text(text = "Order")
-            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+                .statusBarsPadding()
+                .animateContentSize(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Header section
+            FridgeHeader(
+                title = if (multiSelectMode) "Select Items" else "Your Fridge Items",
+                itemCount = finalItems.size,
+                onRefresh = { viewModel.fetchFridgeItems() }
+            )
 
-            // The actual dropdown menu
-            DropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-                offset = DpOffset(x = 240.dp, y = 0.dp) //
-            ) {
-                orderOptions.forEach { order ->
-                    DropdownMenuItem(
-                        text = { Text(order) },
-                        onClick = {
-                            selectedOrderOption = order
-                            expanded = false
-                        }
-                    )
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Search Bar
+            SearchBar(
+                searchQuery = searchQuery,
+                onQueryChange = { query -> viewModel.setSearchQuery(query) }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Filters Row
+            if (!multiSelectMode) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    val filters = listOf("All", "Expired", "Expiring Soon", "Normal")
+                    filters.forEach { filter ->
+                        Text(
+                            text = filter,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = if (filter == selectedFilter) Color.Black else Color.Gray,
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(
+                                    if (filter == selectedFilter) Color(0xFFE0E0E0) else Color.Transparent
+                                )
+                                .clickable { selectedFilter = filter }
+                                .padding(horizontal = 16.dp, vertical = 8.dp)
+                        )
+                    }
                 }
             }
-        }
-        // -----------------------------------------------------------
 
-        Spacer(modifier = Modifier.height(12.dp))
+            // ------------------- Dropdown for Ordering -------------------
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Show error/loading/empty states
-        when {
-            isLoading -> {
-                CircularProgressIndicator(Modifier.padding(top = 32.dp))
-            }
-            errorMessage != null -> {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+
+                // Show the currently selected option
                 Text(
-                    text = errorMessage.orEmpty(),
-                    color = MaterialTheme.colorScheme.error,
+                    text = "Order: $selectedOrderOption",
                     style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier
-                        .padding(top = 16.dp)
-                        .fillMaxWidth()
+                    color = Color.Gray
                 )
-            }
-            finalItems.isEmpty() -> {
-                Text(
-                    text = "No items found.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.padding(top = 16.dp),
-                    textAlign = TextAlign.Center
-                )
-            }
-            else -> {
-                // Main list of items
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
+                Spacer(modifier = Modifier.width(8.dp))
+                // The dropdown button
+                OutlinedButton(
+                    onClick = { expanded = true },
+                    shape = RoundedCornerShape(8.dp),
                 ) {
-                    items(finalItems) { item ->
-                        // Enhanced card that supports multi-selection
-                        MultiSelectFridgeItemCard(
-                            item = item,
-                            navController = navController,
-                            multiSelectMode = multiSelectMode,
-                            isSelected = selectedItems.contains(item.id),
-                            onSelectItem = { selectedItem ->
-                                if (selectedItems.contains(selectedItem.id)) {
-                                    selectedItems.remove(selectedItem.id)
-                                } else {
-                                    selectedItems.add(selectedItem.id)
-                                }
-                                // If user deselected the last item, exit multiSelectMode if no items are left
-                                if (selectedItems.isEmpty()) {
-                                    multiSelectMode = false
-                                }
-                            },
-                            onLongPressItem = { selectedItem ->
-                                // Enter multi-select mode if not already
-                                if (!multiSelectMode) {
-                                    multiSelectMode = true
-                                    selectedItems.add(selectedItem.id)
-                                }
+                    Text(text = "Order")
+                }
+
+                // The actual dropdown menu
+                DropdownMenu(
+                    expanded = expanded,
+                    onDismissRequest = { expanded = false },
+                    offset = DpOffset(x = 240.dp, y = 0.dp) //
+                ) {
+                    orderOptions.forEach { order ->
+                        DropdownMenuItem(
+                            text = { Text(order) },
+                            onClick = {
+                                selectedOrderOption = order
+                                expanded = false
                             }
                         )
                     }
                 }
             }
-        }
+            // -----------------------------------------------------------
 
-        Spacer(modifier = Modifier.weight(1f))
+            Spacer(modifier = Modifier.height(12.dp))
 
-        // If we have selected items, show a "Delete Selected" button
-        if (selectedItems.isNotEmpty()) {
-            Button(
-                onClick = {
-                    // Call your viewModel method to delete these items from the fridge
-                    viewModel.deleteFridgeItems(selectedItems.toList())
-                    // Clear selection and exit multiSelectMode
-                    selectedItems.clear()
-                    multiSelectMode = false
-
-                    //navController.navigate(Screen.FridgeScreen.route)
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Red
-                ),
-                modifier = Modifier.padding(horizontal = 16.dp)
-            ) {
-                Text("Delete Selected (${selectedItems.size})")
+            // Show error/loading/empty states
+            when {
+                isLoading -> {
+                    CircularProgressIndicator(Modifier.padding(top = 32.dp))
+                }
+                errorMessage != null -> {
+                    Text(
+                        text = errorMessage.orEmpty(),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier
+                            .padding(top = 16.dp)
+                            .fillMaxWidth()
+                    )
+                }
+                finalItems.isEmpty() -> {
+                    Text(
+                        text = "No items found.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        modifier = Modifier.padding(top = 16.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+                else -> {
+                    // Main list of items
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        items(finalItems) { item ->
+                            // Enhanced card that supports multi-selection
+                            MultiSelectFridgeItemCard(
+                                item = item,
+                                navController = navController,
+                                multiSelectMode = multiSelectMode,
+                                isSelected = selectedItems.contains(item.id),
+                                onSelectItem = { selectedItem ->
+                                    if (selectedItems.contains(selectedItem.id)) {
+                                        selectedItems.remove(selectedItem.id)
+                                    } else {
+                                        selectedItems.add(selectedItem.id)
+                                    }
+                                    // If user deselected the last item, exit multiSelectMode if no items are left
+                                    if (selectedItems.isEmpty()) {
+                                        multiSelectMode = false
+                                    }
+                                },
+                                onLongPressItem = { selectedItem ->
+                                    // Enter multi-select mode if not already
+                                    if (!multiSelectMode) {
+                                        multiSelectMode = true
+                                        selectedItems.add(selectedItem.id)
+                                    }
+                                }
+                            )
+                        }
+                    }
+                }
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-        }
+            Spacer(modifier = Modifier.height(12.dp))
 
-        Button(
-            onClick = { navController.popBackStack() },
-            modifier = Modifier.padding(horizontal = 16.dp)
-        ) {
-            Text("Back to Home")
+            // If we have selected items, show a "Delete Selected" button
+            if (selectedItems.isNotEmpty()) {
+                Button(
+                    onClick = {
+                        viewModel.deleteFridgeItems(selectedItems.toList())
+                        selectedItems.clear()
+                        multiSelectMode = false
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color.Red
+                    ),
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                ) {
+                    Text("Delete Selected (${selectedItems.size})")
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+            }
         }
     }
 }
@@ -285,8 +289,11 @@ fun FridgeHeader(
     onRefresh: () -> Unit
 ) {
     Card(
+//        colors = CardDefaults.cardColors(
+//            containerColor = MaterialTheme.colorScheme.surfaceVariant
+//        ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
+            containerColor = Color.Transparent
         ),
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth()
@@ -303,18 +310,18 @@ fun FridgeHeader(
                     style = MaterialTheme.typography.headlineMedium
                 )
                 Text(
-                    text = "You have $itemCount item(s)",
+                    text = "$itemCount item(s) available",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            IconButton(onClick = onRefresh) {
-                Icon(
-                    imageVector = Icons.Default.Refresh,
-                    contentDescription = "Refresh items"
-                )
-            }
+//            IconButton(onClick = onRefresh) {
+//                Icon(
+//                    imageVector = Icons.Default.Refresh,
+//                    contentDescription = "Refresh items"
+//                )
+//            }
         }
     }
 }
@@ -366,8 +373,6 @@ fun MultiSelectFridgeItemCard(
                         // Toggle selection
                         onSelectItem(item)
                     } else {
-                        // If not in multi-select mode, navigate to detail or do normal onClick
-                        // e.g. navController.navigate(Screen.FridgeItemDetailScreen.withArgs("${item.id}"))
                         navController.navigate("fridgeItemDetail/${item.id}")
                     }
                 },

@@ -25,55 +25,77 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.fridgescanner.ui.BottomNavigationBar
 import com.example.fridgescanner.viewmodel.FridgeViewModel
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.QrCodeScanner
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.example.fridgescanner.Screen
+import com.example.fridgescanner.ui.BottomNavigationBar
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScanScreen(navController: NavController, viewModel: FridgeViewModel) {
-    // We'll keep track of whether the user wants to add manually or scan
-    // If you want separate screens for each approach, you can navigate to them.
-    // Alternatively, you can conditionally show UI in the same screen.
+    // Determines whether to show manual fields or just the "Scan" options
     var showManualFields by remember { mutableStateOf(false) }
 
-    // We'll also track user input for item name, expiration date, etc., if adding manually
+    // Item states for manual entry
     var itemName by remember { mutableStateOf("") }
     var expirationDate by remember { mutableStateOf("") }
 
-    // DatePickerDialog requires context
-    val context = androidx.compose.ui.platform.LocalContext.current
-
-    // State to control showing the DatePickerDialog
+    // Show DatePickerDialog state
     var showDatePicker by remember { mutableStateOf(false) }
 
-    // If true, show the DatePickerDialog
+    // If true, display the DatePickerDialog
     if (showDatePicker) {
         ShowDatePickerDialog(
-            context = context,
+            context = LocalContext.current,
             onDateSelected = { selectedDate ->
-                // Format the date as needed (yyyy-MM-dd, for example)
                 expirationDate = selectedDate
                 showDatePicker = false
             },
-            onDismissRequest = {
-                // User canceled or dismissed the dialog
-                showDatePicker = false
-            }
+            onDismissRequest = { showDatePicker = false }
         )
     }
+
+    // Bottom navigation state
+    var selectedBottomNav by remember { mutableStateOf(0) }
+    val bottomNavItems = listOf("Home", "Scan New Item", "Fridge", "Settings")
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Scan or Add Item") },
+                title = { Text("") },
                 navigationIcon = {
-                    // Provide a back arrow or similar
+                    // If you'd like a back arrow, you can add it here (Icons.Default.ArrowBack, etc.)
                 }
+            )
+        },
+        bottomBar = {
+            BottomNavigationBar(
+                items = bottomNavItems,
+                selectedIndex = selectedBottomNav,
+                onItemSelected = { selectedBottomNav = it },
+                navController = navController,
+                name = viewModel.name
             )
         }
     ) { innerPadding ->
+        // Main container
         Column(
             modifier = Modifier
                 .padding(innerPadding)
@@ -82,80 +104,130 @@ fun ScanScreen(navController: NavController, viewModel: FridgeViewModel) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Prompt user to choose an approach
             if (!showManualFields) {
+
+                Spacer(modifier = Modifier.height(160.dp))
+
+                // --------- "Scan or Add" UI -----------
                 Text(
                     text = "Scan a New Item",
-                    style = MaterialTheme.typography.headlineSmall
-                )
-
-                Button(
-                    onClick = { showManualFields = true },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Add Manually")
-                }
-
-                Button(
-                    onClick = {
-                        // TODO: Launch camera scanning approach or navigate to a dedicated scanning screen
-                        //navController.navigate(Screen.ScanBarcodeScreen.route)
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Scan Barcode")
-                }
-            } else {
-                // Show manual entry UI
-                Text("Add Fridge Item Manually", style = MaterialTheme.typography.headlineSmall)
-
-                TextField(
-                    value = itemName,
-                    onValueChange = { itemName = it },
-                    label = { Text("Item Name") },
-                    modifier = Modifier.fillMaxWidth()
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
                 )
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                // Instead of a TextField, use a Button or Box to display the chosen date and open the DatePicker
-                Button(
-                    onClick = { showDatePicker = true },
-                    modifier = Modifier.fillMaxWidth()
+                // Card grouping the "Add Manually" and "Scan Barcode" buttons
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                            containerColor = Color(0x00FFFFFF)
+                    )
                 ) {
-                    // If the user hasn't picked a date, show placeholder text
-                    // otherwise show the chosen date
-                    val buttonText = if (expirationDate.isEmpty()) {
-                        "Select Expiration Date"
-                    } else {
-                        "Expiration: $expirationDate"
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Button(
+                            onClick = { showManualFields = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Add Manually")
+                        }
+
+                        OutlinedButton(
+                            onClick = {
+                                navController.navigate(Screen.BarcodeScannerScreen.route)
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.QrCodeScanner,
+                                contentDescription = "Scan Icon",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Scan Barcode")
+                        }
                     }
-                    Text(buttonText)
                 }
+            } else {
+                // --------- Manual Entry Fields -----------
+                Text(
+                    text = "Add Fridge Item Manually",
+                    style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
+                )
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = {
-                        // 1. Validate user input
-                        // 2. Possibly add to fridge (viewModel call or direct repository call)
-                        // 3. Navigate back or show success
-                    },
-                    modifier = Modifier.fillMaxWidth()
+                // Use a Card to visually separate the manual input section
+                Card(
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = CardDefaults.cardColors(
+                            containerColor = Color(0x00FFFFFF)
+                    )
                 ) {
-                    Text("Save Item")
+                    Column(
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        // Item Name
+                        OutlinedTextField(
+                            value = itemName,
+                            onValueChange = { itemName = it },
+                            label = { Text("Item Name") },
+                            modifier = Modifier.fillMaxWidth()
+                        )
+
+                        // Expiration date
+                        OutlinedButton(
+                            onClick = { showDatePicker = true },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.CalendarMonth,
+                                contentDescription = "Calendar Icon",
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            val buttonText = if (expirationDate.isEmpty()) {
+                                "Select Expiration Date"
+                            } else {
+                                "Expires on: $expirationDate"
+                            }
+                            Text(buttonText)
+                        }
+
+                        Button(
+                            onClick = {
+                                // 1. Validate user input
+                                // 2. Possibly add to fridge (viewModel call or direct repository call)
+                                // 3. Navigate back or show success
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text("Save Item")
+                        }
+
+                        OutlinedButton(
+                            onClick = { showManualFields = false },
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text("Back")
+                        }
+                    }
                 }
             }
-
+            // Extra spacer to push UI up if there's unused space
             Spacer(modifier = Modifier.weight(1f))
-
-            // A "Back" button or bottom bar to return
-            Button(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text("Cancel")
-            }
         }
     }
 }
@@ -166,18 +238,14 @@ fun ShowDatePickerDialog(
     onDateSelected: (String) -> Unit,
     onDismissRequest: () -> Unit
 ) {
-    // Use a Calendar to get the current year, month, day
     val calendar = Calendar.getInstance()
 
     val datePicker = DatePickerDialog(
         context,
         { _, year, month, dayOfMonth ->
-            // month is 0-based, so add 1
             val pickedCalendar = Calendar.getInstance().apply {
                 set(year, month, dayOfMonth)
             }
-
-            // Format the date as "yyyy-MM-dd"
             val format = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
             val formattedDate = format.format(pickedCalendar.time)
 
@@ -188,15 +256,12 @@ fun ShowDatePickerDialog(
         calendar.get(Calendar.DAY_OF_MONTH)
     )
 
-    // If you'd like a minimum date (e.g. can't pick past dates), you can do:
+    // If you'd like a minimum date (e.g. can't pick past dates):
     // datePicker.datePicker.minDate = calendar.timeInMillis
 
-    // Show the dialog
     LaunchedEffect(Unit) {
         datePicker.show()
     }
-
-    // Optionally, handle a dismiss callback if user cancels the dialog
     DisposableEffect(Unit) {
         onDispose {
             onDismissRequest()

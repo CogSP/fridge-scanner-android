@@ -7,10 +7,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Kitchen
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Button
@@ -20,7 +18,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,68 +25,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.fridgescanner.R
-import com.example.fridgescanner.Screen
-
-
-//@Composable
-//fun MainScreen(navController: NavController) {
-//    var text by remember {
-//        mutableStateOf("")
-//    }
-//
-//    Column(
-//        verticalArrangement = Arrangement.Center,
-//        horizontalAlignment = Alignment.CenterHorizontally, // Center horizontally
-//        modifier = Modifier
-//            .fillMaxSize() // Fill the entire screen
-//            .padding(horizontal = 32.dp) // Adjust padding as needed
-//    ) {
-//        TextField(
-//            value = text,
-//            onValueChange = { text = it },
-//            label = { Text("Enter your name") }, // Optional: Add a label for better UX
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(horizontal = 16.dp) // Optional: Adjust padding inside TextField
-//        )
-//        Spacer(modifier = Modifier.height(16.dp))
-//        Button(
-//            onClick = {
-//                navController.navigate(Screen.DetailScreen.withArgs(text))
-//            },
-//            modifier = Modifier
-//                .align(Alignment.CenterHorizontally) // Center the button horizontally
-//                .padding(horizontal = 16.dp)
-//        ) {
-//            Text(text = "Login")
-//        }
-//    }
-//}
-
-
-
+import com.example.fridgescanner.viewmodel.FridgeViewModel
 
 @Composable
-fun MainScreen(navController: NavController) {
-    // State for user input
+fun RegisterScreen(navController: NavController, viewModel: FridgeViewModel) {
     var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-
-    // Whether the password is visible or masked
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // For demonstration, we’ll do a no-op click for these actions
-    fun onLoginClicked() { /* TODO: Handle login */ }
-    fun onForgotPasswordClicked() { /* TODO: Handle password reset */ }
-    fun onRegisterClicked() { /* TODO: Handle register navigation */ }
+    // For demonstration
+    fun onRegisterClicked() {
+        // TODO: Implement actual register logic or API call
+        // On success, navigate to the login screen or directly home
+        navController.popBackStack()
+    }
 
-    // Main column layout
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -97,33 +52,41 @@ fun MainScreen(navController: NavController) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
-        Icon(
-            painter = painterResource(R.drawable.fridge_icon_login),
-            contentDescription = "Fridge Logo",
-            modifier = Modifier.size(120.dp), // example size
-            //tint = MaterialTheme.colorScheme.primary
+        // Title
+        Text(
+            text = "Create an Account",
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        Spacer(Modifier.height(180.dp))
-
-        // Username Field
-        Text(text = "Username", style = MaterialTheme.typography.bodyMedium)
+        // Username
+        Text(text = "Username")
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
-            placeholder = { Text("Your username") },
+            placeholder = { Text("Your desired username") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 4.dp, bottom = 16.dp)
         )
 
-        // Password Field
-        Text(text = "Password", style = MaterialTheme.typography.bodyMedium)
+        // Email
+        Text(text = "Email")
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            placeholder = { Text("your.email@domain.com") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp, bottom = 16.dp)
+        )
+
+        // Password
+        Text(text = "Password")
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            placeholder = { Text("Your password") },
+            placeholder = { Text("Choose a password") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 4.dp),
@@ -143,37 +106,25 @@ fun MainScreen(navController: NavController) {
             }
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // "Forgotten your password?" Link
-        TextButton(
-            onClick = { onForgotPasswordClicked() },
-            modifier = Modifier.align(Alignment.End) // right-align
-        ) {
-            Text("Forgotten your password?")
-        }
-
+        // Register Button
         Spacer(modifier = Modifier.height(24.dp))
-
-        // Login Button
         Button(
-            onClick = { navController.navigate(Screen.HomePageScreen.withArgs(username)) }, //TODO: to substitute with onLoginClicked()
+            onClick = { onRegisterClicked() },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            shape = RoundedCornerShape(12.dp) // slightly rounded corners
-        ) {
-            Text("Login")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // "Register" link
-        TextButton(
-            onClick = { onRegisterClicked() },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            shape = RoundedCornerShape(12.dp)
         ) {
             Text("Register")
+        }
+
+        // Back to Login link
+        Spacer(modifier = Modifier.height(16.dp))
+        TextButton(
+            onClick = { navController.popBackStack() },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text("Back to Login")
         }
     }
 }

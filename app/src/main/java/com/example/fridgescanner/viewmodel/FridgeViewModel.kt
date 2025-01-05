@@ -10,10 +10,14 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class FridgeViewModel(private val repository: FridgeRepository) : ViewModel() {
+
+    lateinit var lastScannedCode: Any
+    var name: String = ""
 
     // Backing property for fridge items
     private val _fridgeItems = MutableStateFlow<List<FridgeItem>>(emptyList())
@@ -67,7 +71,7 @@ class FridgeViewModel(private val repository: FridgeRepository) : ViewModel() {
             _errorMessage.value = null
             try {
                 val items = repository.getFridgeItems()
-                _fridgeItems.value = items
+                _fridgeItems.value = items.toList()
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to load fridge items."
             } finally {
