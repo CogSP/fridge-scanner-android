@@ -8,7 +8,31 @@ data class FridgeItem(
     val id: Int,
     val name: String,
     val expirationDate: String,
-    val quantity: Int
+    val quantity: Int,
+    val brand: String,
+    val category: String,
+    val allergens: String,
+    val conservationConditions: String,
+    val countriesWhereSold: String,
+    val countriesImported: String,
+    val ownerImported: String,
+    val preparation: String,
+    val purchasePlaces: String,
+    val productQuantity: String,
+    val productQuantityUnit: String,
+    val productType: String,
+    val customerService: String,
+    val imageUrl: String,
+    val ingredientsImageEn: String?,
+    val carbohydrates100g: String?,
+    val energyKcal100g: String?,
+    val fat100g: String?,
+    val fiber100g: String?,
+    val proteins100g: String?,
+    val salt100g: String?,
+    val saturatedFat100g: String?,
+    val sodium100g: String?,
+    val sugars100g: String?
 ) {
     fun isExpiringSoon(thresholdDays: Long): Boolean {
         return try {

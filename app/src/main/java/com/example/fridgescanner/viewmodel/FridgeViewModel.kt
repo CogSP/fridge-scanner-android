@@ -13,6 +13,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class FridgeViewModel(private val repository: FridgeRepository) : ViewModel() {
 
@@ -100,6 +101,13 @@ class FridgeViewModel(private val repository: FridgeRepository) : ViewModel() {
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun addOrUpdateFridgeItem(newItem: FridgeItem) {
+        viewModelScope.launch {
+            repository.addOrUpdateFridgeItem(newItem)
+            fetchFridgeItems()
+        }
     }
 
     fun deleteFridgeItems(itemIds: List<Int>) {

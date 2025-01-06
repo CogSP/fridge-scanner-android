@@ -80,6 +80,11 @@ fun Navigation() {
         composable(Screen.BarcodeScannerScreen.route) {
             BarcodeScannerScreen(navController = navController, fridgeViewModel)
         }
+
+        composable(Screen.NotificationsScreen.route) {
+            NotificationsScreen(navController)
+        }
+
     }
 }
 

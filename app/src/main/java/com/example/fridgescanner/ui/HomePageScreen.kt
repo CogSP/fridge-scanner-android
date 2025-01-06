@@ -48,6 +48,7 @@ fun GreetingText(userName: String?) {
 }
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomePageScreen(name: String?, navController: NavController, viewModel: FridgeViewModel) {
     // Example data
@@ -71,6 +72,23 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
     val bottomNavItems = listOf("Home", "Scan New Item", "Fridge", "Settings")
 
     Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    GreetingText(userName = userName)
+                },
+                actions = {
+                    IconButton(onClick = {
+                        navController.navigate(Screen.NotificationsScreen.route)
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = "Notifications"
+                        )
+                    }
+                }
+            )
+        },
         bottomBar = {
             BottomNavigationBar(
                 items = bottomNavItems,
@@ -89,13 +107,6 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
                 .padding(horizontal = 16.dp)
         ) {
             Spacer(Modifier.height(16.dp))
-
-            GreetingText(userName = userName)
-
-            Spacer(Modifier.height(16.dp))
-
-            // Wallet balance card
-            //WalletBalanceCard(balance = walletBalance)
 
             val allItems by viewModel.filteredFridgeItems.collectAsState()
             val threshold by viewModel.expirationThreshold.collectAsState()

@@ -289,9 +289,6 @@ fun FridgeHeader(
     onRefresh: () -> Unit
 ) {
     Card(
-//        colors = CardDefaults.cardColors(
-//            containerColor = MaterialTheme.colorScheme.surfaceVariant
-//        ),
         colors = CardDefaults.cardColors(
             containerColor = Color.Transparent
         ),
