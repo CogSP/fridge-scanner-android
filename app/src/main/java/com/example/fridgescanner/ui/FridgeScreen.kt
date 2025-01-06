@@ -58,7 +58,7 @@ fun FridgeScreen(
 
     // -------------- Multi-select states --------------
     var multiSelectMode by remember { mutableStateOf(false) }
-    val selectedItems = remember { mutableStateListOf<Int>() }
+    val selectedItems = remember { mutableStateListOf<Long>() }
     // -----------------------------------------------
 
     // Count how many items we have

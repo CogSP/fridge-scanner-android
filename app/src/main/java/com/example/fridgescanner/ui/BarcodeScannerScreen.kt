@@ -189,7 +189,7 @@ fun fetchProductInfo(
                         val sugars100g = product.optJSONObject("nutriments")?.optString("sugars_100g", "Unknown Sugars")
 
                         val fridgeItem = FridgeItem(
-                            id = id.toInt(),
+                            id = id.toLong(),
                             name = productNameEN,
                             expirationDate = expirationDate,
                             quantity = 1,

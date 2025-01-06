@@ -5,7 +5,7 @@ import java.time.format.DateTimeFormatter
 import java.time.temporal.ChronoUnit
 
 data class FridgeItem(
-    val id: Int,
+    val id: Long,
     val name: String,
     val expirationDate: String,
     val quantity: Int,

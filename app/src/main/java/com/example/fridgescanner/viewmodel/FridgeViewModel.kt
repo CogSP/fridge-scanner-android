@@ -81,7 +81,7 @@ class FridgeViewModel(private val repository: FridgeRepository) : ViewModel() {
         }
     }
 
-    fun fetchFridgeItemById(id: Int) {
+    fun fetchFridgeItemById(id: Long) {
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
@@ -110,7 +110,7 @@ class FridgeViewModel(private val repository: FridgeRepository) : ViewModel() {
         }
     }
 
-    fun deleteFridgeItems(itemIds: List<Int>) {
+    fun deleteFridgeItems(itemIds: List<Long>) {
         viewModelScope.launch {
             repository.deleteItemsByIds(itemIds)
             fetchFridgeItems()

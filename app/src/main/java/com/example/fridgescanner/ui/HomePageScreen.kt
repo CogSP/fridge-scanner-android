@@ -53,12 +53,11 @@ fun GreetingText(userName: String?) {
 fun HomePageScreen(name: String?, navController: NavController, viewModel: FridgeViewModel) {
     // Example data
     val userName = name
-    val walletBalance = "₦2,440.30"
     val services = listOf(
-        ServiceItem("Qualcosa", Icons.Default.Phone),
-        ServiceItem("Qualcos'altro", Icons.Default.Bolt),
-        ServiceItem("Una Cosa", Icons.Default.Tv),
-        ServiceItem("Feature incredibile", Icons.Default.School)
+        ServiceItem("Shopping List", Icons.Default.ShoppingCart),
+        ServiceItem("Account", Icons.Default.Person),
+        ServiceItem("Scan a new Item", Icons.Default.CameraAlt),
+        ServiceItem("Qualcosa", Icons.Default.School)
     )
     val recentTransactions = listOf(
         TransactionItem("Eggs", "Today, 10:45pm", "x2", Icons.Default.Egg),
@@ -123,7 +122,7 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
             Spacer(Modifier.height(16.dp))
 
             // Services row
-            ServicesRow(services)
+            ServicesRow(services, navController)
 
             Spacer(Modifier.height(16.dp))
 
@@ -158,8 +157,7 @@ fun ItemsStatusCard(
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth(),
-        //colors = CardDefaults.cardColors(containerColor = Color(0xFF212121)) // Dark-ish background
+        modifier = Modifier.fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
@@ -224,7 +222,7 @@ fun ItemsStatusCard(
 // Services Row
 //---------------------------------------
 @Composable
-fun ServicesRow(services: List<ServiceItem>) {
+fun ServicesRow(services: List<ServiceItem>, navController: NavController) {
     // Horizontal row of icons/text
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -243,12 +241,21 @@ fun ServicesRow(services: List<ServiceItem>) {
                         .background(Color(0x17F44336)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        imageVector = service.icon,
-                        contentDescription = service.name,
-                        tint = Color(0xFF673AB7),
-                        modifier = Modifier.size(24.dp)
-                    )
+                    IconButton(onClick = {
+                        if (service.name == "Shopping List") {
+                            navController.navigate(Screen.ShoppingListScreen.route)
+                        }
+                        if (service.name == "Scan a new Item") {
+                            navController.navigate(Screen.BarcodeScannerScreen.route)
+                        }
+                    }) {
+                        Icon(
+                            imageVector = service.icon,
+                            contentDescription = service.name,
+                            tint = Color(0xFF673AB7),
+                            modifier = Modifier.size(24.dp)
+                        )
+                    }
                 }
                 Spacer(Modifier.height(4.dp))
                 Text(

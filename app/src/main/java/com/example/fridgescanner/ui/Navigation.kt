@@ -56,12 +56,11 @@ fun Navigation() {
             route = Screen.FridgeItemDetailScreen.route + "/{id}",
             arguments = listOf(
                 navArgument("id") {
-                    type = NavType.IntType
+                    type = NavType.LongType
                 }
             )
         ) { entry ->
-            val itemId = entry.arguments?.getInt("id") ?: 0
-            // Provide the ViewModel using the factory
+            val itemId = entry.arguments?.getLong("id") ?: 0
             FridgeItemDetailScreen(
                 itemId = itemId,
                 navController = navController,
@@ -83,6 +82,10 @@ fun Navigation() {
 
         composable(Screen.NotificationsScreen.route) {
             NotificationsScreen(navController)
+        }
+
+        composable(Screen.ShoppingListScreen.route) {
+            ShoppingListScreen(navController = navController, fridgeViewModel)
         }
 
     }

@@ -25,7 +25,7 @@ import com.example.fridgescanner.viewmodel.FridgeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun FridgeItemDetailScreen(itemId: Int, navController: NavController, viewModel: FridgeViewModel) {
+fun FridgeItemDetailScreen(itemId: Long, navController: NavController, viewModel: FridgeViewModel) {
 
     LaunchedEffect(key1 = itemId) {
         viewModel.fetchFridgeItemById(itemId)

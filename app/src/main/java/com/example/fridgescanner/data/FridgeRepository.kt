@@ -153,14 +153,14 @@ class FridgeRepository {
         }
     }
 
-    suspend fun getFridgeItemById(id: Int): FridgeItem? {
+    suspend fun getFridgeItemById(id: Long): FridgeItem? {
         return withContext(Dispatchers.IO) {
             mockItems.find { it.id == id }
         }
     }
 
 
-    suspend fun deleteItemsByIds(ids: List<Int>) {
+    suspend fun deleteItemsByIds(ids: List<Long>) {
         withContext(Dispatchers.IO) {
             // Remove all items whose id is in [ids]
             mockItems.removeAll { it.id in ids }
