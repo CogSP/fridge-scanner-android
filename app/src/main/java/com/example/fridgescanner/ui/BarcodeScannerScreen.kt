@@ -1,236 +1,281 @@
 package com.example.fridgescanner.ui
 
-
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import android.Manifest
+import android.content.pm.PackageManager
+import android.graphics.Matrix
+import android.graphics.Rect
+import android.graphics.RectF
+import android.os.Bundle
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.OptIn
+import androidx.camera.core.*
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
-import com.example.fridgescanner.data.FridgeItem
-import com.example.fridgescanner.viewmodel.FridgeViewModel
-import com.google.mlkit.vision.codescanner.GmsBarcodeScannerOptions
-import com.google.mlkit.vision.codescanner.GmsBarcodeScanning
-import okhttp3.Call
-import okhttp3.Callback
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import org.json.JSONObject
-import java.io.IOException
-
-
+import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.content.ContextCompat
+import com.google.mlkit.vision.barcode.BarcodeScanning
+import com.google.mlkit.vision.barcode.BarcodeScanner
+import com.google.mlkit.vision.barcode.common.Barcode
+import com.google.mlkit.vision.common.InputImage
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 @Composable
-fun BarcodeScannerScreen(navController: NavController, viewModel: FridgeViewModel) {
-
+fun BarcodeScannerScreen(
+    onBack: () -> Unit
+) {
     val context = LocalContext.current
 
-    var scannedCode by remember { mutableStateOf<String?>(null) }
-    var productInfo by remember { mutableStateOf<String?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
+    // State to hold scanned barcodes
+    val scannedBarcodes = remember { mutableStateListOf<String>() }
 
-    val options = GmsBarcodeScannerOptions.Builder()
-        // if we want to only scan barcodes, we can specify it here, so that the search becomes faster
-        //.setBarcodeFormats(
-        //   Barcode.FORMAT_QR_CODE,
-        //    Barcode.FORMAT_AZTEC)
-        .enableAutoZoom() // available on 16.1.0 and higher
-        .build()
+    // Remember a camera executor for running tasks off the main thread
+    val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
 
+    // Remember objects for PreviewView and OverlayView to be used in AndroidView
+    var previewView: PreviewView? by remember { mutableStateOf(null) }
+    var overlayView: OverlayView? by remember { mutableStateOf(null) }
 
-    val scanner = GmsBarcodeScanning.getClient(context, options)
+    // Permission launcher for camera
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted ->
+            if (isGranted) {
+                startCamera(
+                    context = context,
+                    previewView = previewView,
+                    overlayView = overlayView,
+                    scannedBarcodes = scannedBarcodes,
+                    cameraExecutor = cameraExecutor
+                )
+            } else {
+                Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+    )
 
-    // Start scanning once on entering this composable
-    // If you want to re-scan multiple times, adapt logic accordingly
-    // Start scanning once on entering this composable
+    // Check camera permission on composition
     LaunchedEffect(Unit) {
-        scanner.startScan()
-            .addOnSuccessListener { barcode ->
-                scannedCode = barcode.rawValue
-                if (!scannedCode.isNullOrBlank()) {
-                    fetchProductInfo(
-                        barcodeValue = scannedCode!!,
-                        onSuccess = { info -> productInfo = info },
-                        onFailure = { error -> errorMessage = error },
-                        viewModel = viewModel
-                    )
-                }
+        when {
+            ContextCompat.checkSelfPermission(
+                context, Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                // If permission granted, start camera
+                startCamera(
+                    context = context,
+                    previewView = previewView,
+                    overlayView = overlayView,
+                    scannedBarcodes = scannedBarcodes,
+                    cameraExecutor = cameraExecutor
+                )
             }
-            .addOnCanceledListener {
-                scannedCode = "Scan canceled"
+            else -> {
+                // Request permission
+                permissionLauncher.launch(Manifest.permission.CAMERA)
             }
-            .addOnFailureListener { e ->
-                scannedCode = "Scan failed: ${e.localizedMessage}"
-            }
+        }
     }
 
-
-    // UI showing scanning status or the scanned result
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        verticalArrangement = Arrangement.Center,
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        if (scannedCode == null) {
-            // In-progress
-            Text(text = "Scanning in progress...")
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = { navController.popBackStack() }) {
-                Text("Cancel")
-            }
-        } else {
-            Text(text = "Scanned Code: $scannedCode")
-            Spacer(modifier = Modifier.height(16.dp))
-
-            when {
-                productInfo != null -> {
-                    Text(text = "Product Info: $productInfo")
+    // UI layout using Compose
+    Box(modifier = Modifier.fillMaxSize()) {
+        // Camera Preview using PreviewView
+        AndroidView(
+            factory = { ctx ->
+                PreviewView(ctx).also { pv ->
+                    previewView = pv
                 }
-                errorMessage != null -> {
-                    Text(text = "Error: $errorMessage", color = androidx.compose.ui.graphics.Color.Red)
-                }
-                else -> {
-                    Text(text = "Fetching product information...")
-                }
-            }
+            },
+            modifier = Modifier.fillMaxSize()
+        )
 
-            Spacer(modifier = Modifier.height(16.dp))
-            Button(onClick = {
-                // Optionally store the code in the ViewModel
-                viewModel.lastScannedCode = scannedCode as String
-                // Return to previous screen or handle code
-                navController.popBackStack()
-            }) {
-                Text("OK")
+        // Overlay view for bounding box
+        AndroidView(
+            factory = { ctx ->
+                // Pass null for AttributeSet as no XML attributes are required.
+                OverlayView(ctx, null).also { ov ->
+                    overlayView = ov
+                }
+            },
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Display scanned barcodes at the bottom
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .wrapContentHeight()
+                .background(Color(0xAA000000))
+                .padding(8.dp)
+                .align(Alignment.BottomCenter)
+        ) {
+            items(scannedBarcodes) { barcode ->
+                Text(text = barcode, color = Color.White)
             }
+        }
+    }
+
+    // Clean up resources when leaving the screen
+    DisposableEffect(Unit) {
+        onDispose {
+            cameraExecutor.shutdown()
         }
     }
 }
 
-
-fun fetchProductInfo(
-    barcodeValue: String,
-    onSuccess: (String) -> Unit,
-    onFailure: (String) -> Unit,
-    viewModel: FridgeViewModel
+private fun startCamera(
+    context: android.content.Context,
+    previewView: PreviewView?,
+    overlayView: OverlayView?,
+    scannedBarcodes: MutableList<String>,
+    cameraExecutor: ExecutorService
 ) {
-    val client = OkHttpClient()
-    val url = "https://world.openfoodfacts.org/api/v0/product/$barcodeValue.json"
+    if (previewView == null || overlayView == null) return
 
-    val request = Request.Builder()
-        .url(url)
-        .build()
+    val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
+    cameraProviderFuture.addListener({
+        val cameraProvider = cameraProviderFuture.get()
 
-    client.newCall(request).enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {
-            onFailure("Failed to fetch product info: ${e.localizedMessage}")
+        val preview = Preview.Builder().build().also {
+            it.setSurfaceProvider(previewView.surfaceProvider)
         }
 
-        override fun onResponse(call: Call, response: Response) {
-            response.use { res ->
-                if (res.isSuccessful) {
-                    val body = res.body?.string()
-                    val json = JSONObject(body ?: "{}")
-                    val product = json.optJSONObject("product")
-                    if (product != null) {
-
-                        val id = product.optString("code", "Unknown ID")
-                        val productNameEN = product.optString("product_name_en", "Unknown Product")
-                        val brand = product.optString("brands", "Unknown Brand")
-                        val category = product.optString("categories", "Unknown Category")
-                        val allergens = product.optString("allergens", "Unknown Allergens")
-                        val conservationConditions = product.optString("conservation_conditions", "Unknown Conservation Conditions")
-                        val countriesWhereSold = product.optString("countries", "Unknown Countries")
-                        val countriesImported = product.optString("countries_imported", "Unknown Countries")
-                        val ownerImported = product.optString("owner_imported", "Unknown Owner")
-                        val preparation = product.optString("preparation", "Unknown Preparation")
-                        val purchasePlaces = product.optString("purchase_places", "Unknown Purchase Places")
-                        val productQuantity = product.optString("quantity", "Unknown Quantity")
-                        val productQuantityUnit = product.optString("quantity_unit", "Unknown Quantity Unit")
-                        val expirationDate = product.optString("expiration_date", "Unknown Expiration Date")
-
-                        // check if this is always "food" and doesn't differentiate between edible and drinkable. In that case it's useless
-                        val productType = product.optString("product_type", "Unknown Product Type")
-
-                        val customerService = product.optString("customer_service", "Unknown Customer Service")
-                        val imageUrl = product.optString("image_url", "Unknown Image URL")
-
-                        val ingredientsImageEn = product
-                            .optJSONObject("selected_images")
-                            ?.optJSONObject("ingredients")
-                            ?.optJSONObject("display")
-                            ?.optString("en", "Unknown EN Ingredients Image URL")
-
-                        // nutriments
-                        val carbohydrates100g = product.optJSONObject("nutriments")?.optString("carbohydrates_100g", "Unknown Carbohydrates")
-                        val energyKcal100g = product.optJSONObject("nutriments")?.optString("energy-kcal_100g", "Unknown Energy")
-                        val fat100g = product.optJSONObject("nutriments")?.optString("fat_100g", "Unknown Fat")
-                        val fiber100g = product.optJSONObject("nutriments")?.optString("fiber_100g", "Unknown Fiber")
-                        val proteins100g = product.optJSONObject("nutriments")?.optString("proteins_100g", "Unknown Proteins")
-                        val salt100g = product.optJSONObject("nutriments")?.optString("salt_100g", "Unknown Salt")
-                        val saturatedFat100g = product.optJSONObject("nutriments")?.optString("saturated-fat_100g", "Unknown Saturated Fat")
-                        val sodium100g = product.optJSONObject("nutriments")?.optString("sodium_100g", "Unknown Sodium")
-                        val sugars100g = product.optJSONObject("nutriments")?.optString("sugars_100g", "Unknown Sugars")
-
-                        val fridgeItem = FridgeItem(
-                            id = id.toLong(),
-                            name = productNameEN,
-                            expirationDate = expirationDate,
-                            quantity = 1,
-                            brand = brand,
-                            category = category,
-                            allergens = allergens,
-                            conservationConditions = conservationConditions,
-                            countriesWhereSold = countriesWhereSold,
-                            countriesImported = countriesImported,
-                            ownerImported = ownerImported,
-                            preparation = preparation,
-                            purchasePlaces = purchasePlaces,
-                            productQuantity = productQuantity,
-                            productQuantityUnit = productQuantityUnit,
-                            productType = productType,
-                            customerService = customerService,
-                            imageUrl = imageUrl,
-                            ingredientsImageEn = ingredientsImageEn,
-                            carbohydrates100g = carbohydrates100g,
-                            energyKcal100g = energyKcal100g,
-                            fat100g = fat100g,
-                            fiber100g = fiber100g,
-                            proteins100g = proteins100g,
-                            salt100g = salt100g,
-                            saturatedFat100g = saturatedFat100g,
-                            sodium100g = sodium100g,
-                            sugars100g = sugars100g
-                        )
-
-                        // add or update to fridge
-                        viewModel.addOrUpdateFridgeItem(fridgeItem)
-
-
-                        onSuccess("$productNameEN registered!")
-                    } else {
-                        onFailure("No product information found for barcode $barcodeValue")
-                    }
-                } else {
-                    onFailure("API error: ${res.message}")
-                }
+        val barcodeScanner: BarcodeScanner = BarcodeScanning.getClient()
+        val imageAnalyzer = ImageAnalysis.Builder().build().also { analysis ->
+            analysis.setAnalyzer(cameraExecutor) { imageProxy ->
+                processImageProxy(
+                    barcodeScanner,
+                    imageProxy,
+                    previewView,
+                    overlayView,
+                    scannedBarcodes
+                )
             }
         }
-    })
+
+        val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+        try {
+            cameraProvider.unbindAll()
+            cameraProvider.bindToLifecycle(
+                (context as? androidx.lifecycle.LifecycleOwner) ?: return@addListener,
+                cameraSelector,
+                preview,
+                imageAnalyzer
+            )
+        } catch (exc: Exception) {
+            Toast.makeText(context, "Camera initialization failed", Toast.LENGTH_SHORT).show()
+        }
+    }, ContextCompat.getMainExecutor(context))
+}
+
+@OptIn(ExperimentalGetImage::class)
+private fun processImageProxy(
+    barcodeScanner: BarcodeScanner,
+    imageProxy: ImageProxy,
+    previewView: PreviewView,
+    overlayView: OverlayView,
+    scannedBarcodes: MutableList<String>
+) {
+    val mediaImage = imageProxy.image
+    if (mediaImage != null) {
+        val image = InputImage.fromMediaImage(
+            mediaImage,
+            imageProxy.imageInfo.rotationDegrees
+        )
+        barcodeScanner.process(image)
+            .addOnSuccessListener { barcodes ->
+                val newScanned = mutableListOf<String>()
+                for (barcode in barcodes) {
+                    when (barcode.valueType) {
+                        Barcode.TYPE_URL -> {
+                            barcode.url?.url?.let { newScanned.add(it) }
+                            barcode.boundingBox?.let {
+                                updateOverlay(it, imageProxy, previewView, overlayView)
+                            }
+                        }
+                        Barcode.TYPE_TEXT -> {
+                            barcode.displayValue?.let { newScanned.add(it) }
+                            barcode.boundingBox?.let {
+                                updateOverlay(it, imageProxy, previewView, overlayView)
+                            }
+                        }
+                    }
+                }
+                scannedBarcodes.clear()
+                scannedBarcodes.addAll(newScanned)
+            }
+            .addOnFailureListener {
+                Toast.makeText(previewView.context, "Failed to scan barcode", Toast.LENGTH_SHORT).show()
+            }
+            .addOnCompleteListener {
+                imageProxy.close()
+            }
+    }
+}
+
+private fun updateOverlay(
+    boundingBox: Rect,
+    imageProxy: ImageProxy,
+    previewView: PreviewView,
+    overlayView: OverlayView
+) {
+    val overlayBoundingBox = transformBoundingBox(boundingBox, imageProxy, previewView)
+    overlayView.qrCodeBounds = overlayBoundingBox
+    overlayView.postInvalidate()
+}
+
+private fun transformBoundingBox(
+    boundingBox: Rect,
+    imageProxy: ImageProxy,
+    previewView: PreviewView
+): Rect {
+    val previewWidth = previewView.width.toFloat()
+    val previewHeight = previewView.height.toFloat()
+    val imageWidth = imageProxy.width.toFloat()
+    val imageHeight = imageProxy.height.toFloat()
+
+    // Adjust for the aspect ratio
+    val aspectRatioPreview = previewWidth / previewHeight
+    val aspectRatioImage = imageHeight / imageWidth
+
+    val scaleFactor: Float
+    val dx: Float
+    val dy: Float
+
+    if (aspectRatioPreview > aspectRatioImage) {
+        scaleFactor = previewWidth / imageHeight
+        dx = 0f
+        dy = (previewHeight - imageWidth * scaleFactor) / 2f
+    } else {
+        scaleFactor = previewHeight / imageWidth
+        dx = (previewWidth - imageHeight * scaleFactor) / 2f
+        dy = 0f
+    }
+
+    val matrix = Matrix().apply {
+        postScale(scaleFactor, scaleFactor)
+        postTranslate(dx, dy)
+    }
+
+    val rectF = RectF(boundingBox)
+    matrix.mapRect(rectF)
+
+    return Rect(
+        rectF.left.toInt(),
+        rectF.top.toInt(),
+        rectF.right.toInt(),
+        rectF.bottom.toInt()
+    )
 }

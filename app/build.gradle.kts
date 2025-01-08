@@ -51,6 +51,8 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation(libs.androidx.navigation.runtime.ktx)
     implementation(libs.play.services.mlkit.barcode.scanning)
+    implementation(libs.barcode.scanning.v1702)
+    implementation(libs.barcode.scanning.v1700)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -68,4 +70,14 @@ dependencies {
     implementation(libs.play.services.code.scanner)
     implementation(libs.okhttp)
 
+//    implementation(libs.androidx.camera.core.v110)
+//    implementation(libs.androidx.camera.camera2.v110)
+//    implementation(libs.androidx.camera.lifecycle)
+//    implementation(libs.androidx.camera.view)
+    //implementation(libs.accompanist.camera)
+    implementation(libs.accompanist.permissions)
+    implementation(libs.androidx.camera.core.v130)
+    implementation(libs.androidx.camera.camera2.v130)
+    implementation(libs.androidx.camera.lifecycle.v130)
+    implementation(libs.androidx.camera.view.v130)
 }

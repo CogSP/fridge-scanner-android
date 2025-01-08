@@ -46,12 +46,35 @@ fun Navigation() {
             HomePageScreen(name = entry.arguments?.getString("name"), navController = navController, viewModel = fridgeViewModel)
         }
         composable(
+            route = Screen.FridgeScreen.route + "/{filter}",
+            arguments = listOf(
+                navArgument("filter") {
+                    type = NavType.StringType
+                    defaultValue = "All" // Default filter if none provided
+                    nullable = true
+                }
+            )
+        ) { entry ->
+            val filter = entry.arguments?.getString("filter") ?: "All"
+            FridgeScreen(
+                navController = navController,
+                viewModel = fridgeViewModel,
+                initialFilter = filter // Pass the filter to FridgeScreen
+            )
+        }
+
+        // Preserve the original route without parameters if needed
+        // Actually I don't think this is needed
+        composable(
             route = Screen.FridgeScreen.route
         ) {
             FridgeScreen(
                 navController = navController,
-                viewModel = fridgeViewModel)
+                viewModel = fridgeViewModel
+                // default initialFilter will be used here
+            )
         }
+
         composable(
             route = Screen.FridgeItemDetailScreen.route + "/{id}",
             arguments = listOf(
@@ -76,9 +99,17 @@ fun Navigation() {
             ScanScreen(navController = navController, fridgeViewModel)
         }
 
-        composable(Screen.BarcodeScannerScreen.route) {
-            BarcodeScannerScreen(navController = navController, fridgeViewModel)
+//        composable(Screen.CameraScreenWithOverlay.route) {
+//            //BarcodeScannerScreen(navController = navController, fridgeViewModel)
+//            CameraScreenWithOverlay(navController = navController, fridgeViewModel)
+//        }
+
+        composable("barcodeScanner") {
+            BarcodeScannerScreen(
+                onBack = { navController.popBackStack() }
+            )
         }
+
 
         composable(Screen.NotificationsScreen.route) {
             NotificationsScreen(navController)
@@ -86,6 +117,10 @@ fun Navigation() {
 
         composable(Screen.ShoppingListScreen.route) {
             ShoppingListScreen(navController = navController, fridgeViewModel)
+        }
+
+        composable(Screen.AccountScreen.route) {
+            AccountScreen(navController = navController, viewModel = fridgeViewModel)
         }
 
     }

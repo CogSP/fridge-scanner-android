@@ -42,6 +42,11 @@ class FridgeViewModel(private val repository: FridgeRepository) : ViewModel() {
     private val _expirationThreshold = MutableStateFlow(3L) // default to 3
     val expirationThreshold: StateFlow<Long> = _expirationThreshold.asStateFlow()
 
+    // Backing property for shopping list
+    private val _shoppingList = MutableStateFlow<List<String>>(emptyList())
+    val shoppingList: StateFlow<List<String>> = _shoppingList.asStateFlow()
+
+
     fun setExpirationThreshold(days: Long) {
         _expirationThreshold.value = days
     }
@@ -64,7 +69,9 @@ class FridgeViewModel(private val repository: FridgeRepository) : ViewModel() {
 
     init {
         fetchFridgeItems()
+        fetchShoppingList()
     }
+
 
     fun fetchFridgeItems() {
         viewModelScope.launch {
@@ -117,4 +124,38 @@ class FridgeViewModel(private val repository: FridgeRepository) : ViewModel() {
         }
     }
 
+
+    fun addToShoppingList(item: String) {
+        viewModelScope.launch {
+            try {
+                repository.addToShoppingList(item) // Call a corresponding repository function
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to add item to shopping list."
+            }
+        }
+    }
+
+
+    fun fetchShoppingList() {
+        viewModelScope.launch {
+            try {
+                val list = repository.getShoppingList()
+                _shoppingList.value = list
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to load shopping list."
+            }
+        }
+    }
+
+
+    fun clearShoppingList() {
+        viewModelScope.launch {
+            try {
+                repository.clearShoppingList()
+                _shoppingList.value = emptyList()
+            } catch (e: Exception) {
+                _errorMessage.value = "Failed to clear shopping list."
+            }
+        }
+    }
 }

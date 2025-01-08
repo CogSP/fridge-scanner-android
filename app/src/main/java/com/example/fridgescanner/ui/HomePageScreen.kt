@@ -56,8 +56,8 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
     val services = listOf(
         ServiceItem("Shopping List", Icons.Default.ShoppingCart),
         ServiceItem("Account", Icons.Default.Person),
-        ServiceItem("Scan a new Item", Icons.Default.CameraAlt),
-        ServiceItem("Qualcosa", Icons.Default.School)
+        ServiceItem("Scan Item", Icons.Default.CameraAlt),
+        ServiceItem("Expired Items", Icons.Default.MoodBad)
     )
     val recentTransactions = listOf(
         TransactionItem("Eggs", "Today, 10:45pm", "x2", Icons.Default.Egg),
@@ -245,8 +245,14 @@ fun ServicesRow(services: List<ServiceItem>, navController: NavController) {
                         if (service.name == "Shopping List") {
                             navController.navigate(Screen.ShoppingListScreen.route)
                         }
-                        if (service.name == "Scan a new Item") {
+                        if (service.name == "Scan Item") {
                             navController.navigate(Screen.BarcodeScannerScreen.route)
+                        }
+                        if (service.name == "Account") {
+                            navController.navigate(Screen.AccountScreen.route)
+                        }
+                        if (service.name == "Expired Items") {
+                            navController.navigate(Screen.FridgeScreen.route + "/Expired")
                         }
                     }) {
                         Icon(

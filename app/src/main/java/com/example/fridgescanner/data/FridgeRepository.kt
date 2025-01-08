@@ -5,7 +5,8 @@ import kotlinx.coroutines.withContext
 
 class FridgeRepository {
 
-    // Mock data
+    private val mockShoppingList = mutableListOf<String>()
+
     private val mockItems = mutableListOf(
         FridgeItem(
             id = 1,
@@ -159,12 +160,30 @@ class FridgeRepository {
         }
     }
 
-
     suspend fun deleteItemsByIds(ids: List<Long>) {
         withContext(Dispatchers.IO) {
             // Remove all items whose id is in [ids]
             mockItems.removeAll { it.id in ids }
         }
     }
+
+    suspend fun addToShoppingList(item: String) {
+        withContext(Dispatchers.IO) {
+            mockShoppingList.add(item)
+        }
+    }
+
+    suspend fun getShoppingList(): List<String> {
+        return withContext(Dispatchers.IO) {
+            mockShoppingList.toList()
+        }
+    }
+
+    suspend fun clearShoppingList() {
+        withContext(Dispatchers.IO) {
+            mockShoppingList.clear()
+        }
+    }
+
 
 }

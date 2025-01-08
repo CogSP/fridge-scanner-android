@@ -30,7 +30,8 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun FridgeScreen(
     navController: NavController,
-    viewModel: FridgeViewModel
+    viewModel: FridgeViewModel,
+    initialFilter: String = "All" // Default to "All" if not provided
 ) {
     val allItems by viewModel.filteredFridgeItems.collectAsState()
     val threshold by viewModel.expirationThreshold.collectAsState()
@@ -45,7 +46,7 @@ fun FridgeScreen(
     val searchQuery by viewModel.searchQuery.collectAsState()
 
     // Selected filter state
-    var selectedFilter by remember { mutableStateOf("All") }
+    var selectedFilter by remember { mutableStateOf(initialFilter) }
 
     // Items to display based on the selected filter
     val filteredItems = when (selectedFilter) {

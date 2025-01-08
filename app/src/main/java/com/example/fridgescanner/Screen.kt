@@ -9,9 +9,13 @@ sealed class Screen(val route: String) {
     object FridgeItemDetailScreen : Screen("fridgeItemDetail")
     object OptionsScreen : Screen("options_screen")
     object ScanScreen : Screen("scan_screen")
-    object BarcodeScannerScreen : Screen("barcode_scanner_screen")
+    //object BarcodeScannerScreen : Screen("barcode_scanner_screen")
+    //object CameraScreenWithOverlay : Screen("camera_screen_with_overlay")
+    object BarcodeScannerScreen : Screen("barcodeScanner")
+
     object NotificationsScreen : Screen("notifications_screen")
     object ShoppingListScreen : Screen("shopping_list_screen")
+    object AccountScreen : Screen("account_screen")
 
     fun withArgs(vararg args: String): String {
         return buildString {
