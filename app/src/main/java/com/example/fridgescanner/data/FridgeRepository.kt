@@ -133,6 +133,7 @@ class FridgeRepository {
     suspend fun addOrUpdateFridgeItem(newItem: FridgeItem) {
         withContext(Dispatchers.IO) {
             val existingItem = mockItems.find { it.id == newItem.id }
+            println("Existing Item: $existingItem")
             if (existingItem != null) {
                 // Update the quantity if the item already exists
                 mockItems[mockItems.indexOf(existingItem)] = existingItem.copy(

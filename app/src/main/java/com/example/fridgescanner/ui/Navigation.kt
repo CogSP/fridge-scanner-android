@@ -99,14 +99,10 @@ fun Navigation() {
             ScanScreen(navController = navController, fridgeViewModel)
         }
 
-//        composable(Screen.CameraScreenWithOverlay.route) {
-//            //BarcodeScannerScreen(navController = navController, fridgeViewModel)
-//            CameraScreenWithOverlay(navController = navController, fridgeViewModel)
-//        }
-
         composable("barcodeScanner") {
             BarcodeScannerScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                viewModel = fridgeViewModel
             )
         }
 

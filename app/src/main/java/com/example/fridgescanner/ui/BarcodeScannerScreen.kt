@@ -1,12 +1,13 @@
 package com.example.fridgescanner.ui
 
 import android.Manifest
+import android.content.Context
 import android.content.pm.PackageManager
 import android.graphics.Matrix
 import android.graphics.Rect
 import android.graphics.RectF
-import android.os.Bundle
-import android.widget.Toast
+import android.os.Handler
+import android.os.Looper
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
@@ -26,21 +27,37 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import com.example.fridgescanner.data.FridgeItem
+import com.example.fridgescanner.util.ToastHelper
+import com.example.fridgescanner.viewmodel.FridgeViewModel
 import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.BarcodeScanner
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
+import okhttp3.Call
+import okhttp3.Callback
+import okhttp3.OkHttpClient
+import okhttp3.Request
+import okhttp3.Response
+import org.json.JSONObject
+import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 @Composable
 fun BarcodeScannerScreen(
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    viewModel: FridgeViewModel
 ) {
     val context = LocalContext.current
 
+    var hasNavigatedState = remember { mutableStateOf(0) }
+
     // State to hold scanned barcodes
-    val scannedBarcodes = remember { mutableStateListOf<String>() }
+    //val scannedBarcodes = remember { mutableStateListOf<String>() }
+
+    // TODO: check if this is better than the previous one
+    var scannedBarcode by remember { mutableStateOf<String?>(null) }
 
     // Remember a camera executor for running tasks off the main thread
     val cameraExecutor = remember { Executors.newSingleThreadExecutor() }
@@ -49,20 +66,24 @@ fun BarcodeScannerScreen(
     var previewView: PreviewView? by remember { mutableStateOf(null) }
     var overlayView: OverlayView? by remember { mutableStateOf(null) }
 
+
     // Permission launcher for camera
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted ->
             if (isGranted) {
                 startCamera(
+                    hasNavigatedState,
                     context = context,
                     previewView = previewView,
                     overlayView = overlayView,
-                    scannedBarcodes = scannedBarcodes,
-                    cameraExecutor = cameraExecutor
+                    //scannedBarcodes = scannedBarcodes,
+                    cameraExecutor = cameraExecutor,
+                    viewModel = viewModel,
+                    onBack = onBack
                 )
             } else {
-                Toast.makeText(context, "Camera permission denied", Toast.LENGTH_SHORT).show()
+                ToastHelper.showToast(context, "Camera permission denied")
             }
         }
     )
@@ -75,11 +96,14 @@ fun BarcodeScannerScreen(
             ) == PackageManager.PERMISSION_GRANTED -> {
                 // If permission granted, start camera
                 startCamera(
+                    hasNavigatedState,
                     context = context,
                     previewView = previewView,
                     overlayView = overlayView,
-                    scannedBarcodes = scannedBarcodes,
-                    cameraExecutor = cameraExecutor
+                    //scannedBarcodes = scannedBarcodes,
+                    cameraExecutor = cameraExecutor,
+                    viewModel = viewModel,
+                    onBack = onBack
                 )
             }
             else -> {
@@ -112,18 +136,30 @@ fun BarcodeScannerScreen(
             modifier = Modifier.fillMaxSize()
         )
 
-        // Display scanned barcodes at the bottom
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxWidth()
-                .wrapContentHeight()
-                .background(Color(0xAA000000))
-                .padding(8.dp)
-                .align(Alignment.BottomCenter)
-        ) {
-            items(scannedBarcodes) { barcode ->
-                Text(text = barcode, color = Color.White)
-            }
+//        // Display scanned barcodes at the bottom
+//        LazyColumn(
+//            modifier = Modifier
+//                .fillMaxWidth()
+//                .wrapContentHeight()
+//                .background(Color(0xAA000000))
+//                .padding(8.dp)
+//                .align(Alignment.BottomCenter)
+//        ) {
+//            items(scannedBarcodes) { barcode ->
+//                Text(text = barcode, color = Color.White)
+//            }
+//        }
+
+        // Use a simple Text composable for a single barcode:
+        scannedBarcode?.let { barcode ->
+            Text(
+                text = barcode,
+                color = Color.White,
+                modifier = Modifier
+                    .background(Color(0xAA000000))
+                    .padding(8.dp)
+                    .align(Alignment.BottomCenter)
+            )
         }
     }
 
@@ -131,16 +167,20 @@ fun BarcodeScannerScreen(
     DisposableEffect(Unit) {
         onDispose {
             cameraExecutor.shutdown()
+            ToastHelper.clearToast()
         }
     }
 }
 
 private fun startCamera(
-    context: android.content.Context,
+    hasNavigatedState: MutableState<Int>,
+    context: Context,
     previewView: PreviewView?,
     overlayView: OverlayView?,
-    scannedBarcodes: MutableList<String>,
-    cameraExecutor: ExecutorService
+    //scannedBarcodes: MutableList<String>,
+    cameraExecutor: ExecutorService,
+    viewModel: FridgeViewModel,
+    onBack: () -> Unit
 ) {
     if (previewView == null || overlayView == null) return
 
@@ -156,11 +196,14 @@ private fun startCamera(
         val imageAnalyzer = ImageAnalysis.Builder().build().also { analysis ->
             analysis.setAnalyzer(cameraExecutor) { imageProxy ->
                 processImageProxy(
+                    hasNavigatedState,
                     barcodeScanner,
                     imageProxy,
                     previewView,
                     overlayView,
-                    scannedBarcodes
+                    //scannedBarcodes,
+                    viewModel,
+                    onBack
                 )
             }
         }
@@ -175,19 +218,27 @@ private fun startCamera(
                 imageAnalyzer
             )
         } catch (exc: Exception) {
-            Toast.makeText(context, "Camera initialization failed", Toast.LENGTH_SHORT).show()
+            ToastHelper.showToast(context, "Camera initialization failed")
         }
     }, ContextCompat.getMainExecutor(context))
 }
 
+
 @OptIn(ExperimentalGetImage::class)
 private fun processImageProxy(
+    hasNavigatedState: MutableState<Int>,
     barcodeScanner: BarcodeScanner,
     imageProxy: ImageProxy,
     previewView: PreviewView,
     overlayView: OverlayView,
-    scannedBarcodes: MutableList<String>
+    //scannedBarcodes: MutableList<String>,
+    viewModel: FridgeViewModel,
+    onBack: () -> Unit  // New callback parameter
 ) {
+
+    println("Entering processImageProxy with hasNavigatedState: $hasNavigatedState")
+
+
     val mediaImage = imageProxy.image
     if (mediaImage != null) {
         val image = InputImage.fromMediaImage(
@@ -196,34 +247,53 @@ private fun processImageProxy(
         )
         barcodeScanner.process(image)
             .addOnSuccessListener { barcodes ->
-                val newScanned = mutableListOf<String>()
-                for (barcode in barcodes) {
-                    when (barcode.valueType) {
-                        Barcode.TYPE_URL -> {
-                            barcode.url?.url?.let { newScanned.add(it) }
-                            barcode.boundingBox?.let {
-                                updateOverlay(it, imageProxy, previewView, overlayView)
-                            }
+
+                val firstBarcode = barcodes.firstOrNull()
+
+                if (firstBarcode != null) {
+                    // increase by 1
+                    hasNavigatedState.value += 1
+                    val barcodeValue = when (firstBarcode.valueType) {
+                        Barcode.TYPE_TEXT -> firstBarcode.displayValue
+                        else -> null
+                    }
+                    barcodeValue?.let { value ->
+                        val context = previewView.context
+
+                        if (hasNavigatedState.value == 1) {
+                            fetchProductInfo(
+                                barcodeValue = value,
+                                onSuccess = { message ->
+                                    ToastHelper.showToast(context, message)
+                                    // Ensure navigation happens on the main thread
+                                    Handler(Looper.getMainLooper()).post {
+                                        onBack()
+                                    }
+                                },
+                                onFailure = { errorMsg ->
+                                    ToastHelper.showToast(context, errorMsg)
+                                },
+                                viewModel = viewModel,
+                                context = context
+                            )
                         }
-                        Barcode.TYPE_TEXT -> {
-                            barcode.displayValue?.let { newScanned.add(it) }
-                            barcode.boundingBox?.let {
-                                updateOverlay(it, imageProxy, previewView, overlayView)
-                            }
-                        }
+
+                    }
+                    firstBarcode.boundingBox?.let {
+                        updateOverlay(it, imageProxy, previewView, overlayView)
                     }
                 }
-                scannedBarcodes.clear()
-                scannedBarcodes.addAll(newScanned)
             }
+
             .addOnFailureListener {
-                Toast.makeText(previewView.context, "Failed to scan barcode", Toast.LENGTH_SHORT).show()
+                ToastHelper.showToast(previewView.context, "Failed to scan barcode")
             }
             .addOnCompleteListener {
                 imageProxy.close()
             }
     }
 }
+
 
 private fun updateOverlay(
     boundingBox: Rect,
@@ -279,3 +349,150 @@ private fun transformBoundingBox(
         rectF.bottom.toInt()
     )
 }
+
+
+
+fun fetchProductInfo(
+    barcodeValue: String,
+    onSuccess: (String) -> Unit,
+    onFailure: (String) -> Unit,
+    viewModel: FridgeViewModel,
+    context: Context // Pass context to use in ToastHelper
+) {
+
+    println("Fetching product info for barcode: $barcodeValue")
+
+    val client = OkHttpClient()
+    val url = "https://world.openfoodfacts.org/api/v0/product/$barcodeValue.json"
+
+    val request = Request.Builder()
+        .url(url)
+        .build()
+
+    client.newCall(request).enqueue(object : Callback {
+        override fun onFailure(call: Call, e: IOException) {
+            // Use ToastHelper to show failure message
+            ToastHelper.showToast(context, "Failed to fetch product info: ${e.localizedMessage}")
+            onFailure("Failed to fetch product info: ${e.localizedMessage}")
+        }
+
+        override fun onResponse(call: Call, response: Response) {
+
+            println("OnResponse called with response: $response")
+
+            response.use { res ->
+                if (res.isSuccessful) {
+                    val body = res.body?.string()
+                    val json = JSONObject(body ?: "{}")
+                    val product = json.optJSONObject("product")
+                    if (product != null) {
+                        // Extract product details...
+                        val id = product.optString("code", "0").toLongOrNull() ?: 0L
+                        val productNameEN =
+                            product.optString("product_name_en", "Unknown Product")
+                        val brand = product.optString("brands", "Unknown Brand")
+                        val category = product.optString("categories", "Unknown Category")
+                        val allergens = product.optString("allergens", "Unknown Allergens")
+                        val conservationConditions = product.optString(
+                            "conservation_conditions",
+                            "Unknown Conservation Conditions"
+                        )
+                        val countriesWhereSold =
+                            product.optString("countries", "Unknown Countries")
+                        val countriesImported =
+                            product.optString("countries_imported", "Unknown Countries")
+                        val ownerImported = product.optString("owner_imported", "Unknown Owner")
+                        val preparation =
+                            product.optString("preparation", "Unknown Preparation")
+                        val purchasePlaces =
+                            product.optString("purchase_places", "Unknown Purchase Places")
+                        val productQuantity = product.optString("quantity", "Unknown Quantity")
+                        val productQuantityUnit =
+                            product.optString("quantity_unit", "Unknown Quantity Unit")
+                        val expirationDate =
+                            product.optString("expiration_date", "Unknown Expiration Date")
+                        val productType =
+                            product.optString("product_type", "Unknown Product Type")
+                        val customerService =
+                            product.optString("customer_service", "Unknown Customer Service")
+                        val imageUrl = product.optString("image_url", "Unknown Image URL")
+                        val ingredientsImageEn = product
+                            .optJSONObject("selected_images")
+                            ?.optJSONObject("ingredients")
+                            ?.optJSONObject("display")
+                            ?.optString("en", "Unknown EN Ingredients Image URL")
+
+                        // Nutriments...
+                        val carbohydrates100g =
+                            product.optJSONObject("nutriments")?.optString("carbohydrates_100g")
+                        val energyKcal100g =
+                            product.optJSONObject("nutriments")?.optString("energy-kcal_100g")
+                        val fat100g = product.optJSONObject("nutriments")?.optString("fat_100g")
+                        val fiber100g =
+                            product.optJSONObject("nutriments")?.optString("fiber_100g")
+                        val proteins100g =
+                            product.optJSONObject("nutriments")?.optString("proteins_100g")
+                        val salt100g =
+                            product.optJSONObject("nutriments")?.optString("salt_100g")
+                        val saturatedFat100g =
+                            product.optJSONObject("nutriments")?.optString("saturated-fat_100g")
+                        val sodium100g =
+                            product.optJSONObject("nutriments")?.optString("sodium_100g")
+                        val sugars100g =
+                            product.optJSONObject("nutriments")?.optString("sugars_100g")
+
+                        val fridgeItem = FridgeItem(
+                            id = id,
+                            name = productNameEN,
+                            expirationDate = expirationDate,
+                            quantity = 1,
+                            brand = brand,
+                            category = category,
+                            allergens = allergens,
+                            conservationConditions = conservationConditions,
+                            countriesWhereSold = countriesWhereSold,
+                            countriesImported = countriesImported,
+                            ownerImported = ownerImported,
+                            preparation = preparation,
+                            purchasePlaces = purchasePlaces,
+                            productQuantity = productQuantity,
+                            productQuantityUnit = productQuantityUnit,
+                            productType = productType,
+                            customerService = customerService,
+                            imageUrl = imageUrl,
+                            ingredientsImageEn = ingredientsImageEn,
+                            carbohydrates100g = carbohydrates100g,
+                            energyKcal100g = energyKcal100g,
+                            fat100g = fat100g,
+                            fiber100g = fiber100g,
+                            proteins100g = proteins100g,
+                            salt100g = salt100g,
+                            saturatedFat100g = saturatedFat100g,
+                            sodium100g = sodium100g,
+                            sugars100g = sugars100g
+                        )
+
+                        // Add or update to fridge using ViewModel
+                        viewModel.addOrUpdateFridgeItem(fridgeItem)
+
+                        // Use ToastHelper to show success message
+                        ToastHelper.showToast(context, "${fridgeItem.name} registered!")
+                        onSuccess("${fridgeItem.name} registered!")
+                    } else {
+                        // Switch to the main thread to show the Toast
+                        ToastHelper.showToast(
+                            context,
+                            "No product information found for barcode $barcodeValue"
+                        )
+                        onFailure("No product information found for barcode $barcodeValue")
+                    }
+                } else {
+                    // Use ToastHelper to show API error
+                    ToastHelper.showToast(context, "API error: ${res.message}")
+                    onFailure("API error: ${res.message}")
+                }
+            }
+        }
+    })
+}
+
