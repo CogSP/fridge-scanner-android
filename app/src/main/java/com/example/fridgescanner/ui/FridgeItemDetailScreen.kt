@@ -77,7 +77,8 @@ fun FridgeItemDetailScreen(itemId: Long, navController: NavController, viewModel
                 }
                 item != null -> {
 
-                    val icon = itemIcons[item!!.name.lowercase()] ?: Icons.Filled.ShoppingCart
+                    //val icon = itemIcons[item!!.name.lowercase()] ?: Icons.Filled.ShoppingCart
+                    val icon = Icons.Filled.ShoppingCart
 
                     LazyColumn(
                         modifier = Modifier
@@ -114,10 +115,10 @@ fun FridgeItemDetailScreen(itemId: Long, navController: NavController, viewModel
                                     text = "Brand: ${item!!.brand}",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
-                                Text(
-                                    text = "Category: ${item!!.category}",
-                                    style = MaterialTheme.typography.bodyLarge
-                                )
+//                                Text(
+//                                    text = "Category: ${item!!.category}",
+//                                    style = MaterialTheme.typography.bodyLarge
+//                                )
                                 Text(
                                     text = "Quantity: ${item!!.quantity}",
                                     style = MaterialTheme.typography.bodyLarge
@@ -132,7 +133,7 @@ fun FridgeItemDetailScreen(itemId: Long, navController: NavController, viewModel
                         item { // Nutriments Section
                             ExpandableSection(title = "Nutriments (per 100g)", defaultExpanded = false) {
                                 Text(
-                                    text = "Carbohydrates: ${item!!.carbohydrates100g}",
+                                    text = "Carbohydrates: ${item!!.carbohydrates100g} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
@@ -140,31 +141,31 @@ fun FridgeItemDetailScreen(itemId: Long, navController: NavController, viewModel
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Fat: ${item!!.fat100g}",
+                                    text = "Fat: ${item!!.fat100g} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Fiber: ${item!!.fiber100g}",
+                                    text = "Fiber: ${item!!.fiber100g} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Proteins: ${item!!.proteins100g}",
+                                    text = "Proteins: ${item!!.proteins100g} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Salt: ${item!!.salt100g}",
+                                    text = "Salt: ${item!!.salt100g} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Saturated Fat: ${item!!.saturatedFat100g}",
+                                    text = "Saturated Fat: ${item!!.saturatedFat100g} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Sodium: ${item!!.sodium100g}",
+                                    text = "Sodium: ${item!!.sodium100g} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Sugars: ${item!!.sugars100g}",
+                                    text = "Sugars: ${item!!.sugars100g} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
@@ -182,7 +183,7 @@ fun FridgeItemDetailScreen(itemId: Long, navController: NavController, viewModel
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Countries Where Sold: ${item!!.countriesWhereSold}",
+                                    text = "Countries where sold: ${item!!.countriesWhereSold}",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(

@@ -388,39 +388,76 @@ fun fetchProductInfo(
                     if (product != null) {
                         // Extract product details...
                         val id = product.optString("code", "0").toLongOrNull() ?: 0L
-                        val productNameEN =
-                            product.optString("product_name_en", "Unknown Product")
-                        val brand = product.optString("brands", "Unknown Brand")
-                        val category = product.optString("categories", "Unknown Category")
-                        val allergens = product.optString("allergens", "Unknown Allergens")
+                        var productNameEN =
+                            product.optString("product_name_en", "_")
+
+                        if (productNameEN == "" || productNameEN == "_") {
+                            productNameEN = product.optString("product_name", "_")
+                        }
+
+
+                        val brand = product.optString("brands", "_")
+                        val category = product.optString("categories", "_")
+                        // Read the raw allergens string
+                        val rawAllergens = product.optString("allergens", "_")
+
+                        // Split by commas, remove "en:", and join back together as needed
+                        val allergens = if (rawAllergens != "_") {
+                            rawAllergens
+                                .split(",")
+                                .map { it.removePrefix("en:").trim() } // Remove "en:" and trim spaces
+                                .joinToString(", ")
+                        } else {
+                            "_"
+                        }
+
                         val conservationConditions = product.optString(
                             "conservation_conditions",
-                            "Unknown Conservation Conditions"
+                            "_"
                         )
-                        val countriesWhereSold =
-                            product.optString("countries", "Unknown Countries")
+
+                        val countriesHierarchy = product.optJSONArray("countries_hierarchy")
+                        val countriesWhereSold: String
+
+                        if (countriesHierarchy != null && countriesHierarchy.length() > 0) {
+                            // Build a list of country strings from the array
+                            val countryList = mutableListOf<String>()
+                            for (i in 0 until countriesHierarchy.length()) {
+                                // read the string, then remove the "en:" prefix if present
+                                val rawCountry = countriesHierarchy.optString(i)
+                                val countryWithoutPrefix = rawCountry.removePrefix("en:")
+                                if (countryWithoutPrefix.isNotEmpty()) {
+                                    countryList.add(countryWithoutPrefix)
+                                }
+                            }
+                            // Join them into a single comma-separated string (or any format you prefer)
+                            countriesWhereSold = countryList.joinToString(separator = ", ")
+                        } else {
+                            countriesWhereSold = "_"
+                        }
+
                         val countriesImported =
-                            product.optString("countries_imported", "Unknown Countries")
-                        val ownerImported = product.optString("owner_imported", "Unknown Owner")
+                            product.optString("countries_imported", "_")
+                        val ownerImported = product.optString("owner_imported", "_")
                         val preparation =
-                            product.optString("preparation", "Unknown Preparation")
+                            product.optString("preparation", "_")
                         val purchasePlaces =
-                            product.optString("purchase_places", "Unknown Purchase Places")
-                        val productQuantity = product.optString("quantity", "Unknown Quantity")
+                            product.optString("purchase_places", "_")
+                        val productQuantity = product.optString("quantity", "_")
                         val productQuantityUnit =
-                            product.optString("quantity_unit", "Unknown Quantity Unit")
+                            product.optString("quantity_unit", "_")
                         val expirationDate =
-                            product.optString("expiration_date", "Unknown Expiration Date")
+                            product.optString("expiration_date", "_")
                         val productType =
-                            product.optString("product_type", "Unknown Product Type")
+                            product.optString("product_type", "_")
                         val customerService =
-                            product.optString("customer_service", "Unknown Customer Service")
-                        val imageUrl = product.optString("image_url", "Unknown Image URL")
+                            product.optString("customer_service", "_")
+                        val imageUrl = product.optString("image_url", "_")
                         val ingredientsImageEn = product
                             .optJSONObject("selected_images")
                             ?.optJSONObject("ingredients")
                             ?.optJSONObject("display")
-                            ?.optString("en", "Unknown EN Ingredients Image URL")
+                            ?.optString("en", "_")
 
                         // Nutriments...
                         val carbohydrates100g =
