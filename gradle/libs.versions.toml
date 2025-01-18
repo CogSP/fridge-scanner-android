@@ -28,6 +28,7 @@ retrofit = "2.9.0"
 navigationRuntimeKtx = "2.8.5"
 zxingAndroidEmbedded = "8.1.0"
 playServicesMlkitBarcodeScanning = "18.3.1"
+workRuntimeKtx = "2.10.0"
 
 [libraries]
 accompanist-camera = { module = "com.google.accompanist:accompanist-camera", version.ref = "accompanistCamera" }
@@ -69,6 +70,7 @@ retrofit = { module = "com.squareup.retrofit2:retrofit", version.ref = "retrofit
 androidx-navigation-runtime-ktx = { group = "androidx.navigation", name = "navigation-runtime-ktx", version.ref = "navigationRuntimeKtx" }
 zxing-android-embedded = { module = "com.journeyapps:zxing-android-embedded", version.ref = "zxingAndroidEmbedded" }
 play-services-mlkit-barcode-scanning = { group = "com.google.android.gms", name = "play-services-mlkit-barcode-scanning", version.ref = "playServicesMlkitBarcodeScanning" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

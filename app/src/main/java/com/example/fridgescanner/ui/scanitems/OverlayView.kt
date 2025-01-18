@@ -1,4 +1,4 @@
-package com.example.fridgescanner.ui
+package com.example.fridgescanner.ui.scanitems
 
 import android.content.Context
 import android.graphics.Canvas

@@ -1,4 +1,4 @@
-package com.example.fridgescanner.ui
+package com.example.fridgescanner.ui.account
 
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.foundation.layout.*

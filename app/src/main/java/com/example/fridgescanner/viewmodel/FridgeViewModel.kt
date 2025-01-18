@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.fridgescanner.data.FridgeItem
 import com.example.fridgescanner.data.FridgeRepository
+import com.example.fridgescanner.data.ShoppingItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -43,8 +44,8 @@ class FridgeViewModel(private val repository: FridgeRepository) : ViewModel() {
     val expirationThreshold: StateFlow<Long> = _expirationThreshold.asStateFlow()
 
     // Backing property for shopping list
-    private val _shoppingList = MutableStateFlow<List<String>>(emptyList())
-    val shoppingList: StateFlow<List<String>> = _shoppingList.asStateFlow()
+    private val _shoppingList = MutableStateFlow<List<ShoppingItem>>(emptyList())
+    val shoppingList: StateFlow<List<ShoppingItem>> = _shoppingList
 
 
     fun setExpirationThreshold(days: Long) {
@@ -128,7 +129,7 @@ class FridgeViewModel(private val repository: FridgeRepository) : ViewModel() {
     fun addToShoppingList(item: String) {
         viewModelScope.launch {
             try {
-                repository.addToShoppingList(item) // Call a corresponding repository function
+                repository.addOrIncrementShoppingItem(item) // Call a corresponding repository function
             } catch (e: Exception) {
                 _errorMessage.value = "Failed to add item to shopping list."
             }
@@ -136,26 +137,39 @@ class FridgeViewModel(private val repository: FridgeRepository) : ViewModel() {
     }
 
 
-    fun fetchShoppingList() {
+
+    fun deleteItemFromShoppingList(item: String) {
         viewModelScope.launch {
-            try {
-                val list = repository.getShoppingList()
-                _shoppingList.value = list
-            } catch (e: Exception) {
-                _errorMessage.value = "Failed to load shopping list."
-            }
+            repository.removeShoppingItem(item)
+            fetchShoppingList() // refresh
         }
     }
 
 
+    // Suppose you store them in a repository or a local list
+    fun addOrIncrementShoppingItem(itemName: String) {
+        repository.addOrIncrementShoppingItem(itemName)
+        fetchShoppingList() // re-fetch to update the flow
+    }
+
+    // For removing an item entirely
+    fun removeShoppingItem(itemName: String) {
+        repository.removeShoppingItem(itemName)
+        fetchShoppingList()
+    }
+
+    // For clearing all items
     fun clearShoppingList() {
+        repository.clearShoppingList()
+        fetchShoppingList()
+    }
+
+    // Get the updated list from repository
+    fun fetchShoppingList() {
         viewModelScope.launch {
-            try {
-                repository.clearShoppingList()
-                _shoppingList.value = emptyList()
-            } catch (e: Exception) {
-                _errorMessage.value = "Failed to clear shopping list."
-            }
+            // retrieve from repository
+            val items = repository.getShoppingList()
+            _shoppingList.value = items
         }
     }
 }

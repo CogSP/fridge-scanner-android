@@ -1,4 +1,4 @@
-package com.example.fridgescanner.ui
+package com.example.fridgescanner.ui.options
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons

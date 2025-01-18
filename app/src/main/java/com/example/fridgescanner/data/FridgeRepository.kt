@@ -5,7 +5,7 @@ import kotlinx.coroutines.withContext
 
 class FridgeRepository {
 
-    private val mockShoppingList = mutableListOf<String>()
+    private val mockShoppingList = mutableListOf<ShoppingItem>()
 
     private val mockItems = mutableListOf(
         FridgeItem(
@@ -168,22 +168,30 @@ class FridgeRepository {
         }
     }
 
-    suspend fun addToShoppingList(item: String) {
-        withContext(Dispatchers.IO) {
-            mockShoppingList.add(item)
+
+    fun addOrIncrementShoppingItem(itemName: String) {
+        val existingItem = mockShoppingList.find { it.name.equals(itemName, ignoreCase = true) }
+        if (existingItem != null) {
+            // Replace the old item with a new copy that has incremented quantity
+            val newItem = existingItem.copy(quantity = existingItem.quantity + 1)
+            mockShoppingList[mockShoppingList.indexOf(existingItem)] = newItem
+        } else {
+            // Otherwise add a new item
+            mockShoppingList.add(ShoppingItem(name = itemName, quantity = 1))
         }
     }
 
-    suspend fun getShoppingList(): List<String> {
-        return withContext(Dispatchers.IO) {
-            mockShoppingList.toList()
-        }
+
+    fun removeShoppingItem(itemName: String) {
+        mockShoppingList.removeAll { it.name.equals(itemName, ignoreCase = true) }
     }
 
-    suspend fun clearShoppingList() {
-        withContext(Dispatchers.IO) {
-            mockShoppingList.clear()
-        }
+    fun getShoppingList(): List<ShoppingItem> {
+        return mockShoppingList.toList() // or a copy
+    }
+
+    fun clearShoppingList() {
+        mockShoppingList.clear()
     }
 
 

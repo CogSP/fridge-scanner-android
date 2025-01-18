@@ -1,4 +1,4 @@
-package com.example.fridgescanner.ui
+package com.example.fridgescanner.ui.fridgeui
 
 
 import androidx.compose.foundation.clickable

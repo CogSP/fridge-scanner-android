@@ -1,4 +1,4 @@
-package com.example.fridgescanner.ui
+package com.example.fridgescanner.ui.login
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Visibility
@@ -26,37 +25,26 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.fridgescanner.R
-import com.example.fridgescanner.Screen
 import com.example.fridgescanner.viewmodel.FridgeViewModel
 
 @Composable
-fun LoginScreen(navController: NavController, viewModel: FridgeViewModel) {
-    // State for user input
+fun RegisterScreen(navController: NavController, viewModel: FridgeViewModel) {
     var username by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-
-    // Whether the password is visible or masked
     var passwordVisible by remember { mutableStateOf(false) }
 
-    // For demonstration, we’ll do a no-op click for these actions
-    fun onLoginClicked() {
-        viewModel.name = username
-        navController.navigate(Screen.HomePageScreen.withArgs(username))
-    }
-    fun onForgotPasswordClicked() {
-        navController.navigate(Screen.ForgotPasswordScreen.route)
-    }
+    // For demonstration
     fun onRegisterClicked() {
-        navController.navigate(Screen.RegisterScreen.route)
+        // TODO: Implement actual register logic or API call
+        // On success, navigate to the login screen or directly home
+        navController.popBackStack()
     }
 
-    // Main column layout
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -64,33 +52,41 @@ fun LoginScreen(navController: NavController, viewModel: FridgeViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
-        Icon(
-            painter = painterResource(R.drawable.fridge_icon_login),
-            contentDescription = "Fridge Logo",
-            modifier = Modifier.size(120.dp), // example size
-            //tint = MaterialTheme.colorScheme.primary
+        // Title
+        Text(
+            text = "Create an Account",
+            style = MaterialTheme.typography.headlineSmall,
+            modifier = Modifier.padding(bottom = 24.dp)
         )
 
-        Spacer(Modifier.height(180.dp))
-
-        // Username Field
-        Text(text = "Username", style = MaterialTheme.typography.bodyMedium)
+        // Username
+        Text(text = "Username")
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
-            placeholder = { Text("Your username") },
+            placeholder = { Text("Your desired username") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 4.dp, bottom = 16.dp)
         )
 
-        // Password Field
-        Text(text = "Password", style = MaterialTheme.typography.bodyMedium)
+        // Email
+        Text(text = "Email")
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            placeholder = { Text("your.email@domain.com") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 4.dp, bottom = 16.dp)
+        )
+
+        // Password
+        Text(text = "Password")
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
-            placeholder = { Text("Your password") },
+            placeholder = { Text("Choose a password") },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 4.dp),
@@ -110,40 +106,25 @@ fun LoginScreen(navController: NavController, viewModel: FridgeViewModel) {
             }
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // "Forgotten your password?" Link
-        TextButton(
-            onClick = { onForgotPasswordClicked() },
-            modifier = Modifier.align(Alignment.End) // right-align
-        ) {
-            Text("Forgotten your password?")
-        }
-
+        // Register Button
         Spacer(modifier = Modifier.height(24.dp))
-
-        // Login Button
         Button(
-            onClick = {
-                onLoginClicked()
-            },
+            onClick = { onRegisterClicked() },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            shape = RoundedCornerShape(12.dp) // slightly rounded corners
-        ) {
-            Text("Login")
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // "Register" link
-        TextButton(
-            onClick = { onRegisterClicked() },
-            modifier = Modifier.align(Alignment.CenterHorizontally)
+            shape = RoundedCornerShape(12.dp)
         ) {
             Text("Register")
         }
+
+        // Back to Login link
+        Spacer(modifier = Modifier.height(16.dp))
+        TextButton(
+            onClick = { navController.popBackStack() },
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        ) {
+            Text("Back to Login")
+        }
     }
 }
-

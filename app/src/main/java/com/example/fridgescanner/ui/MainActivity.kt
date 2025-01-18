@@ -5,6 +5,8 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.example.fridgescanner.ui.notification.createNotificationChannel
+import com.example.fridgescanner.ui.notification.scheduleFridgeNotifications
 
 
 class MainActivity : ComponentActivity() {
@@ -13,6 +15,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         Thread.sleep(3000)
         installSplashScreen()
+
+        // 1) Create a notification channel
+        createNotificationChannel(this)
+
+        // 2) Schedule background checks daily
+        scheduleFridgeNotifications(this)
+
         setContent {
             Navigation()
         }

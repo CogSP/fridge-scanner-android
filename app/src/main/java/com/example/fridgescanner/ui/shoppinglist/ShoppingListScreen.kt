@@ -1,4 +1,4 @@
-package com.example.fridgescanner.ui
+package com.example.fridgescanner.ui.shoppinglist
 
 import android.content.Context
 import androidx.compose.animation.AnimatedVisibility
@@ -34,139 +34,25 @@ import android.hardware.SensorEventListener
 import android.hardware.SensorManager
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import kotlin.math.sqrt
-
-
-
-
-
-
-
-
-//@OptIn(ExperimentalMaterial3Api::class)
-//@Composable
-//fun ShoppingListScreen(navController: NavController, viewModel: FridgeViewModel) {
-//    // State to control banner visibility
-//    var showBanner by remember { mutableStateOf(false) }
-//    val shoppingList by viewModel.shoppingList.collectAsState()
-//
-//    Scaffold(
-//        topBar = {
-//            TopAppBar(
-//                title = { Text("Shopping List") },
-//                navigationIcon = {
-//                    IconButton(onClick = { navController.popBackStack() }) {
-//                        Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
-//                    }
-//                }
-//            )
-//        },
-//        floatingActionButton = {
-//            // "+" button at the bottom-right corner
-//            FloatingActionButton(onClick = { showBanner = !showBanner }) {
-//                Icon(imageVector = Icons.Default.Add, contentDescription = "Add Item")
-//            }
-//        }
-//    ) { paddingValues ->
-//        Box(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(paddingValues)
-//                .padding(16.dp)
-//        ) {
-//
-//            Column(modifier = Modifier.fillMaxWidth()) {
-//                Column(modifier = Modifier.fillMaxWidth()) {
-//                    shoppingList.forEach { item ->
-//                        Text(text = "- $item", style = MaterialTheme.typography.headlineSmall)
-//                    }
-//                }
-//            }
-//
-//            // Banner for common items
-//            AnimatedVisibility(
-//                visible = showBanner,
-//                modifier = Modifier
-//                    .align(Alignment.BottomCenter)
-//                    .padding(bottom = 80.dp)  // Adjust padding as needed to position above FAB
-//            ) {
-//                Surface(
-//                    shape = CircleShape,
-//                    tonalElevation = 4.dp,
-//                    modifier = Modifier
-//                        .fillMaxWidth()
-//                        .wrapContentHeight()
-//                ) {
-//                    Row(
-//                        modifier = Modifier
-//                            .padding(8.dp)
-//                            .fillMaxWidth(),
-//                        horizontalArrangement = Arrangement.SpaceEvenly,
-//                        verticalAlignment = Alignment.CenterVertically
-//                    ) {
-//
-//                        IconButton(onClick = {
-//                            viewModel.addToShoppingList("Eggs")
-//                            viewModel.fetchShoppingList()
-//                        }) {
-//                            Icon(
-//                                imageVector = Icons.Filled.Egg,
-//                                contentDescription = "Eggs",
-//                                tint = Color.Unspecified
-//                            )
-//                        }
-//
-//                        IconButton(onClick = {
-//                            viewModel.addToShoppingList("Milk")
-//                            viewModel.fetchShoppingList()
-//                        }) {
-//                            Icon(
-//                                imageVector = Icons.Filled.LocalDrink,
-//                                contentDescription = "Milk",
-//                                tint = Color.Unspecified
-//                            )
-//                        }
-//
-//                        IconButton(onClick = {
-//                            viewModel.addToShoppingList("Breakfast")
-//                            viewModel.fetchShoppingList()
-//                        }) {
-//                            Icon(
-//                                imageVector = Icons.Filled.BreakfastDining,
-//                                contentDescription = "Breakfast",
-//                                tint = Color.Unspecified
-//                            )
-//                        }
-//
-//                        IconButton(onClick = {
-//                            viewModel.addToShoppingList("Fast Food")
-//                            viewModel.fetchShoppingList()
-//                        }) {
-//                            Icon(
-//                                imageVector = Icons.Filled.Fastfood,
-//                                contentDescription = "Fast Food",
-//                                tint = Color.Unspecified
-//                            )
-//                        }
-//                    }
-//                }
-//            }
-//        }
-//    }
-//}
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ShoppingListScreen(navController: NavController, viewModel: FridgeViewModel) {
-
     val context = LocalContext.current
 
     // State for banner visibility, delete confirmation, custom item dialog, and input field
     var showBanner by remember { mutableStateOf(false) }
     var showDeleteConfirmation by remember { mutableStateOf(false) }
     val shoppingList by viewModel.shoppingList.collectAsState()
+
+    // Additional states for completing/removing items
+    val completedItems = remember { mutableStateListOf<String>() }
+
+    // Dialog for adding custom items
     var showCustomItemDialog by remember { mutableStateOf(false) }
     var customItemName by remember { mutableStateOf("") }
 
@@ -179,11 +65,13 @@ fun ShoppingListScreen(navController: NavController, viewModel: FridgeViewModel)
     }
     val shakeDetector = remember {
         ShakeDetector {
+            // On shake, ask if we want to delete **all** items
             showDeleteConfirmation = true
         }
     }
 
-    // Register and unregister sensor listener using DisposableEffect
+
+    // Register and unregister sensor listener
     DisposableEffect(sensorManager, accelerometer) {
         accelerometer?.also { sensor ->
             sensorManager.registerListener(shakeDetector, sensor, SensorManager.SENSOR_DELAY_UI)
@@ -192,6 +80,7 @@ fun ShoppingListScreen(navController: NavController, viewModel: FridgeViewModel)
             sensorManager.unregisterListener(shakeDetector)
         }
     }
+
 
     Scaffold(
         topBar = {
@@ -216,18 +105,58 @@ fun ShoppingListScreen(navController: NavController, viewModel: FridgeViewModel)
                 .padding(paddingValues)
                 .padding(16.dp)
         ) {
-
+            // Main list of shopping items
             LazyColumn(modifier = Modifier.fillMaxWidth()) {
                 items(shoppingList) { item ->
-                    Text(
-                        text = "- $item",
-                        style = MaterialTheme.typography.headlineSmall,
-                        modifier = Modifier.padding(vertical = 4.dp)
-                    )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    ) {
+                        // A checkbox to toggle item completion
+                        Checkbox(
+                            checked = completedItems.contains(item.name),
+                            onCheckedChange = { checked ->
+                                if (checked) {
+                                    completedItems.add(item.name)
+                                } else {
+                                    completedItems.remove(item.name)
+                                }
+                            }
+                        )
+
+                        // Display "Eggs (3)" if quantity is 3, for example
+                        Text(
+                            text = if (item.quantity > 1) "${item.name} (${item.quantity})" else item.name,
+                            style = if (completedItems.contains(item.name))
+                                MaterialTheme.typography.titleMedium.copy(color = Color.Gray)
+                            else
+                                MaterialTheme.typography.titleMedium,
+                            modifier = Modifier
+                                .padding(start = 8.dp)
+                                .weight(1f) // occupy remaining space
+                        )
+
+                        // Remove icon
+                        IconButton(
+                            onClick = {
+                                viewModel.removeShoppingItem(item.name)
+                                // Also remove from completedItems if present
+                                completedItems.remove(item.name)
+                            }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Delete,
+                                contentDescription = "Remove Item",
+                                tint = Color.Red
+                            )
+                        }
+                    }
                 }
             }
 
-            // Banner for common items plus custom item icon
+            // Banner for pre-filled items + custom item
             AnimatedVisibility(
                 visible = showBanner,
                 modifier = Modifier
@@ -248,9 +177,9 @@ fun ShoppingListScreen(navController: NavController, viewModel: FridgeViewModel)
                         horizontalArrangement = Arrangement.SpaceEvenly,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // Each icon calls addOrIncrementShoppingItem
                         IconButton(onClick = {
-                            viewModel.addToShoppingList("Eggs")
-                            viewModel.fetchShoppingList()
+                            viewModel.addOrIncrementShoppingItem("Eggs")
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Egg,
@@ -259,8 +188,7 @@ fun ShoppingListScreen(navController: NavController, viewModel: FridgeViewModel)
                             )
                         }
                         IconButton(onClick = {
-                            viewModel.addToShoppingList("Milk")
-                            viewModel.fetchShoppingList()
+                            viewModel.addOrIncrementShoppingItem("Milk")
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.LocalDrink,
@@ -269,8 +197,7 @@ fun ShoppingListScreen(navController: NavController, viewModel: FridgeViewModel)
                             )
                         }
                         IconButton(onClick = {
-                            viewModel.addToShoppingList("Breakfast")
-                            viewModel.fetchShoppingList()
+                            viewModel.addOrIncrementShoppingItem("Breakfast")
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.BreakfastDining,
@@ -279,8 +206,7 @@ fun ShoppingListScreen(navController: NavController, viewModel: FridgeViewModel)
                             )
                         }
                         IconButton(onClick = {
-                            viewModel.addToShoppingList("Fast Food")
-                            viewModel.fetchShoppingList()
+                            viewModel.addOrIncrementShoppingItem("Fast Food")
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Fastfood,
@@ -288,9 +214,7 @@ fun ShoppingListScreen(navController: NavController, viewModel: FridgeViewModel)
                                 tint = Color.Unspecified
                             )
                         }
-
-
-                        // New IconButton for custom item
+                        // Custom item entry
                         IconButton(onClick = {
                             showCustomItemDialog = true
                         }) {
@@ -304,17 +228,18 @@ fun ShoppingListScreen(navController: NavController, viewModel: FridgeViewModel)
                 }
             }
 
-            // Confirmation Dialog for deleting all items
+            // Confirmation Dialog for deleting ALL items on shake
             if (showDeleteConfirmation) {
                 AlertDialog(
                     onDismissRequest = { showDeleteConfirmation = false },
                     title = { Text("Delete All Items") },
-                    text = { Text("Are you sure you want to delete all items in the shopping list?") },
+                    text = {
+                        Text("Are you sure you want to delete all items in the shopping list?")
+                    },
                     confirmButton = {
                         TextButton(onClick = {
-                            // Clear the shopping list
                             viewModel.clearShoppingList()
-                            viewModel.fetchShoppingList()
+                            completedItems.clear()
                             showDeleteConfirmation = false
                         }) {
                             Text("Yes")
@@ -343,8 +268,7 @@ fun ShoppingListScreen(navController: NavController, viewModel: FridgeViewModel)
                     confirmButton = {
                         TextButton(onClick = {
                             if (customItemName.isNotBlank()) {
-                                viewModel.addToShoppingList(customItemName.trim())
-                                viewModel.fetchShoppingList()
+                                viewModel.addOrIncrementShoppingItem(customItemName.trim())
                             }
                             customItemName = ""
                             showCustomItemDialog = false

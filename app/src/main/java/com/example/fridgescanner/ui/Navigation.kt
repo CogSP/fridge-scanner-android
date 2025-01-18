@@ -11,6 +11,16 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.fridgescanner.Screen
 import com.example.fridgescanner.data.FridgeRepository
+import com.example.fridgescanner.ui.account.AccountScreen
+import com.example.fridgescanner.ui.scanitems.BarcodeScannerScreen
+import com.example.fridgescanner.ui.fridgeui.FridgeItemDetailScreen
+import com.example.fridgescanner.ui.fridgeui.FridgeScreen
+import com.example.fridgescanner.ui.login.ForgotPasswordScreen
+import com.example.fridgescanner.ui.login.LoginScreen
+import com.example.fridgescanner.ui.login.RegisterScreen
+import com.example.fridgescanner.ui.notification.NotificationsScreen
+import com.example.fridgescanner.ui.options.OptionsScreen
+import com.example.fridgescanner.ui.shoppinglist.ShoppingListScreen
 import com.example.fridgescanner.viewmodel.FridgeViewModel
 import com.example.fridgescanner.viewmodel.FridgeViewModelFactory
 
