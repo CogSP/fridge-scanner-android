@@ -371,13 +371,14 @@ fun BottomNavigationBar(
     Column {
         // The horizontal line on top:
         Divider(
-            color = Color(0xFFE0E0E0),
+            color = MaterialTheme.colorScheme.outlineVariant, // or colorScheme.onSurface.copy(alpha=0.12f), etc.
             thickness = 1.dp
         )
 
         // The actual Material 3 NavigationBar
         NavigationBar(
-            containerColor = Color.White
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
         ) {
             items.forEachIndexed { index, label ->
                 // Choose icons by label or fallback

@@ -25,13 +25,13 @@ import com.example.fridgescanner.viewmodel.FridgeViewModel
 import com.example.fridgescanner.viewmodel.FridgeViewModelFactory
 
 @Composable
-fun Navigation() {
+fun Navigation(fridgeViewModel: FridgeViewModel) {
 
     val navController = rememberNavController()
 
-    val repository = remember { FridgeRepository() }
-    val viewModelFactory = remember { FridgeViewModelFactory(repository) }
-    val fridgeViewModel: FridgeViewModel = viewModel(factory = viewModelFactory)
+//    val repository = remember { FridgeRepository() }
+//    val viewModelFactory = remember { FridgeViewModelFactory(repository) }
+//    val fridgeViewModel: FridgeViewModel = viewModel(factory = viewModelFactory)
 
     NavHost(navController, startDestination = Screen.LoginScreen.route) {
         composable(route = Screen.LoginScreen.route) {

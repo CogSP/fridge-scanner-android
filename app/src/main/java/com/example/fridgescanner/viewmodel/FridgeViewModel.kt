@@ -18,6 +18,13 @@ import kotlinx.coroutines.withContext
 
 class FridgeViewModel(private val repository: FridgeRepository) : ViewModel() {
 
+    private val _darkModeEnabled = MutableStateFlow(false)
+    val darkModeEnabled: StateFlow<Boolean> = _darkModeEnabled
+
+    fun setDarkMode(enabled: Boolean) {
+        _darkModeEnabled.value = enabled
+    }
+
     lateinit var lastScannedCode: Any
     var name: String = ""
 
