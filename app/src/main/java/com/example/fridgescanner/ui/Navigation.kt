@@ -11,6 +11,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.fridgescanner.Screen
 import com.example.fridgescanner.data.FridgeRepository
+import com.example.fridgescanner.promo.ProPromoScreen
 import com.example.fridgescanner.ui.account.AccountScreen
 import com.example.fridgescanner.ui.scanitems.BarcodeScannerScreen
 import com.example.fridgescanner.ui.fridgeui.FridgeItemDetailScreen
@@ -127,6 +128,10 @@ fun Navigation(fridgeViewModel: FridgeViewModel) {
 
         composable(Screen.AccountScreen.route) {
             AccountScreen(navController = navController, viewModel = fridgeViewModel)
+        }
+
+        composable(Screen.ProPromoScreen.route) {
+            ProPromoScreen(navController = navController)
         }
 
     }

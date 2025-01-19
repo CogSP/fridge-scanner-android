@@ -13,6 +13,7 @@ sealed class Screen(val route: String) {
     object NotificationsScreen : Screen("notifications_screen")
     object ShoppingListScreen : Screen("shopping_list_screen")
     object AccountScreen : Screen("account_screen")
+    object ProPromoScreen : Screen("pro_promo_screen")
 
     fun withArgs(vararg args: String): String {
         return buildString {

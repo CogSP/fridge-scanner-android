@@ -2,6 +2,7 @@ package com.example.fridgescanner.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -127,7 +128,7 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
             Spacer(Modifier.height(16.dp))
 
             // Promo card - "Season Greetings"
-            PromoCard()
+            PromoCard(navController = navController)
 
             Spacer(Modifier.height(16.dp))
 
@@ -169,7 +170,7 @@ fun ItemsStatusCard(
             Text(
                 text = "Fridge Overview",
                 style = MaterialTheme.typography.headlineMedium.copy(
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Bold
                 )
 
@@ -180,7 +181,7 @@ fun ItemsStatusCard(
             Text(
                 text = "Total items: $totalItems",
                 style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color.Black,
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontWeight = FontWeight.Medium
                 )
             )
@@ -207,8 +208,9 @@ fun ItemsStatusCard(
             // Example 'Manage Items' button
             OutlinedButton(
                 onClick = { navController.navigate(Screen.FridgeScreen.route) },
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Black),
-                //border = ButtonDefaults.outlinedButtonBorder.copy(brush = Brush.horizontalGradient(colors = listOf(Color(0xFF2E7D32), Color(0xFF2E7D32)))),
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = MaterialTheme.colorScheme.onSurface
+                ),
                 shape = RoundedCornerShape(50)
             ) {
                 Text("Manage Items")
@@ -258,7 +260,7 @@ fun ServicesRow(services: List<ServiceItem>, navController: NavController) {
                         Icon(
                             imageVector = service.icon,
                             contentDescription = service.name,
-                            tint = Color(0xFF673AB7),
+                            tint = Color(0xFF9C27B0),
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -277,11 +279,15 @@ fun ServicesRow(services: List<ServiceItem>, navController: NavController) {
 // Promo Card
 //---------------------------------------
 @Composable
-fun PromoCard() {
+fun PromoCard(navController: NavController) {
     Card(
         shape = RoundedCornerShape(12.dp),
-        modifier = Modifier.fillMaxWidth(),
-        //colors = CardDefaults.cardColors(containerColor = Color(0xFFDFFFD6)) // light greenish
+        modifier = Modifier
+            .fillMaxWidth()
+            // Make the whole card clickable
+            .clickable {
+                navController.navigate(Screen.ProPromoScreen.route)
+            },
     ) {
         Row(
             modifier = Modifier
@@ -294,27 +300,25 @@ fun PromoCard() {
                 Text(
                     text = "Buy Fridge Scanner Pro",
                     style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    //color = Color(0xFF2E7D32)
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
                     text = "40% off only for today!",
                     style = MaterialTheme.typography.bodyMedium,
-                    //color = Color(0xFF2E7D32)
                 )
             }
 
-            // If you have an image resource for the egg, show it here:
-            // Example using a placeholder icon or image
+            // A small image or icon
             Icon(
                 imageVector = Icons.Default.Egg,
                 contentDescription = "Egg",
-                //tint = Color(0xFF2E7D32),
                 modifier = Modifier.size(40.dp)
             )
         }
     }
 }
+
+
 
 //---------------------------------------
 // Recent Transactions
