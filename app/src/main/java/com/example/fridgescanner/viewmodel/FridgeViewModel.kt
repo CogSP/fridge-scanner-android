@@ -30,6 +30,19 @@ class FridgeViewModel(private val repository: FridgeRepository, private val auth
     private val _darkModeEnabled = MutableStateFlow(false)
     val darkModeEnabled: StateFlow<Boolean> = _darkModeEnabled
 
+
+    // FridgeViewModel.kt (add these inside your ViewModel class)
+    private val _currentFridgeId = MutableStateFlow<String?>(null)
+    val currentFridgeId: StateFlow<String?> = _currentFridgeId.asStateFlow()
+
+    fun setCurrentFridgeId(id: String) {
+        _currentFridgeId.value = id
+    }
+
+    fun clearCurrentFridgeId() {
+        _currentFridgeId.value = null
+    }
+
     fun setDarkMode(enabled: Boolean) {
         _darkModeEnabled.value = enabled
     }

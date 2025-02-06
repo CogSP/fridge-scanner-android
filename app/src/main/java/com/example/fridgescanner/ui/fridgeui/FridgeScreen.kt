@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,21 +20,36 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.navigation.NavController
+import com.example.fridgescanner.Screen
 import com.example.fridgescanner.viewmodel.FridgeViewModel
 import com.example.fridgescanner.data.FridgeItem
 import com.example.fridgescanner.ui.BottomNavigationBar
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FridgeScreen(
     navController: NavController,
     viewModel: FridgeViewModel,
-    fridgeId: String,
     initialFilter: String = "All" // Default to "All" if not provided
 ) {
     val allItems by viewModel.filteredFridgeItems.collectAsState()
     val threshold by viewModel.expirationThreshold.collectAsState()
+
+    // Read the current fridge id from the ViewModel.
+    val currentFridgeId by viewModel.currentFridgeId.collectAsState()
+
+    // If no fridge is currently selected, navigate back to ManageFridgesScreen.
+    LaunchedEffect(currentFridgeId) {
+        if (currentFridgeId == null) {
+            navController.navigate(Screen.ManageFridgesScreen.route)
+        }
+    }
+
+    // State to control the "Change Fridge" confirmation dialog.
+    var showChangeFridgeDialog by remember { mutableStateOf(false) }
+
 
     // Separate items into categories
     val expiredItems = allItems.filter { it.isExpired() }
@@ -105,10 +121,10 @@ fun FridgeScreen(
             FridgeHeader(
                 title = if (multiSelectMode) "Select Items" else "Your Fridge Items",
                 itemCount = finalItems.size,
-                onRefresh = { viewModel.fetchFridgeItems() }
+                onChangeFridgeClicked = { showChangeFridgeDialog = true }
             )
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(40.dp))
 
             // Search Bar
             SearchBar(
@@ -272,6 +288,31 @@ fun FridgeScreen(
             }
         }
     }
+
+    // Confirmation dialog for changing fridge.
+    if (showChangeFridgeDialog) {
+        AlertDialog(
+            onDismissRequest = { showChangeFridgeDialog = false },
+            title = { Text("Change Fridge") },
+            text = { Text("Do you want to select a different fridge?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    // Clear the current fridge selection and navigate back.
+                    viewModel.clearCurrentFridgeId()
+                    navController.navigate(Screen.ManageFridgesScreen.route) {
+                        popUpTo(Screen.FridgeScreen.route) { inclusive = true }
+                    }
+                }) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showChangeFridgeDialog = false }) {
+                    Text("No")
+                }
+            }
+        )
+    }
 }
 
 fun parseDate(dateStr: String): LocalDate? {
@@ -286,7 +327,7 @@ fun parseDate(dateStr: String): LocalDate? {
 fun FridgeHeader(
     title: String,
     itemCount: Int,
-    onRefresh: () -> Unit
+    onChangeFridgeClicked: () -> Unit
 ) {
     Card(
         colors = CardDefaults.cardColors(
@@ -313,15 +354,19 @@ fun FridgeHeader(
                 )
             }
 
-//            IconButton(onClick = onRefresh) {
-//                Icon(
-//                    imageVector = Icons.Default.Refresh,
-//                    contentDescription = "Refresh items"
-//                )
-//            }
+            // Add a button to let the user change the fridge.
+            IconButton(onClick = { onChangeFridgeClicked() }) {
+                Icon(
+                    imageVector = Icons.Default.Edit,  // Use an appropriate icon
+                    contentDescription = "Change Fridge"
+                )
+            }
         }
     }
 }
+
+
+
 
 @Composable
 fun SearchBar(

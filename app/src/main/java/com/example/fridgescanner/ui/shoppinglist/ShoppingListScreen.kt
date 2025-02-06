@@ -41,7 +41,10 @@ import kotlin.math.sqrt
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ShoppingListScreen(navController: NavController, viewModel: FridgeViewModel) {
+fun ShoppingListScreen(
+    navController: NavController,
+    viewModel: FridgeViewModel
+) {
     val context = LocalContext.current
 
     // State for banner visibility, delete confirmation, custom item dialog, and input field

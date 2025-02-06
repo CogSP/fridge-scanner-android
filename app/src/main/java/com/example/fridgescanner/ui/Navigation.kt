@@ -74,8 +74,7 @@ fun Navigation(fridgeViewModel: FridgeViewModel) {
             FridgeScreen(
                 navController = navController,
                 viewModel = fridgeViewModel,
-                initialFilter = filter, // Pass the filter to FridgeScreen
-                fridgeId = "1"
+                initialFilter = filter
             )
         }
 

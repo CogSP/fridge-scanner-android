@@ -423,7 +423,7 @@ private fun getRouteForLabel(label: String, name: String): String {
     return when (label) {
         "Home" -> Screen.HomePageScreen.withArgs(name)
         "Scan New Item" -> Screen.ScanScreen.route
-        "Fridge" -> Screen.ManageFridgesScreen.route
+        "Fridge" -> Screen.FridgeScreen.route + "/All"
         "Settings" -> Screen.OptionsScreen.route
         else -> ""
     }
