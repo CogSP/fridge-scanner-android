@@ -9,6 +9,8 @@ import androidx.compose.runtime.remember
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.fridgescanner.data.FridgeRepository
+import com.example.fridgescanner.pythonanywhereAPI.ApiClient
+import com.example.fridgescanner.pythonanywhereAPI.AuthService
 import com.example.fridgescanner.ui.notification.createNotificationChannel
 import com.example.fridgescanner.ui.notification.scheduleFridgeNotifications
 import com.example.fridgescanner.ui.theme.FridgeScannerTheme
@@ -32,7 +34,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             // 1) Create / Provide the repository & ViewModel
             val repository = FridgeRepository()
-            val viewModelFactory = FridgeViewModelFactory(repository)
+            // Create an instance of AuthService from your ApiClient (adjust this if your ApiClient is set up differently)
+            val authService = ApiClient.authService
+            val viewModelFactory = FridgeViewModelFactory(repository, authService)
             val fridgeViewModel: FridgeViewModel = viewModel(factory = viewModelFactory)
 
             // 2) Observe dark mode from the ViewModel

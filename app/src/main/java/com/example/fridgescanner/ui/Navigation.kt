@@ -16,6 +16,7 @@ import com.example.fridgescanner.ui.account.AccountScreen
 import com.example.fridgescanner.ui.scanitems.BarcodeScannerScreen
 import com.example.fridgescanner.ui.fridgeui.FridgeItemDetailScreen
 import com.example.fridgescanner.ui.fridgeui.FridgeScreen
+import com.example.fridgescanner.ui.fridgeui.ManageFridgesScreen
 import com.example.fridgescanner.ui.login.ForgotPasswordScreen
 import com.example.fridgescanner.ui.login.LoginScreen
 import com.example.fridgescanner.ui.login.RegisterScreen
@@ -56,6 +57,9 @@ fun Navigation(fridgeViewModel: FridgeViewModel) {
         ) { entry ->
             HomePageScreen(name = entry.arguments?.getString("name"), navController = navController, viewModel = fridgeViewModel)
         }
+        composable(Screen.ManageFridgesScreen.route) {
+            ManageFridgesScreen(navController, fridgeViewModel)
+        }
         composable(
             route = Screen.FridgeScreen.route + "/{filter}",
             arguments = listOf(
@@ -70,21 +74,22 @@ fun Navigation(fridgeViewModel: FridgeViewModel) {
             FridgeScreen(
                 navController = navController,
                 viewModel = fridgeViewModel,
-                initialFilter = filter // Pass the filter to FridgeScreen
+                initialFilter = filter, // Pass the filter to FridgeScreen
+                fridgeId = "1"
             )
         }
 
         // Preserve the original route without parameters if needed
         // Actually I don't think this is needed
-        composable(
-            route = Screen.FridgeScreen.route
-        ) {
-            FridgeScreen(
-                navController = navController,
-                viewModel = fridgeViewModel
-                // default initialFilter will be used here
-            )
-        }
+//        composable(
+//            route = Screen.FridgeScreen.route
+//        ) {
+//            FridgeScreen(
+//                navController = navController,
+//                viewModel = fridgeViewModel
+//                // default initialFilter will be used here
+//            )
+//        }
 
         composable(
             route = Screen.FridgeItemDetailScreen.route + "/{id}",

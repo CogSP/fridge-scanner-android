@@ -29,6 +29,7 @@ import java.time.format.DateTimeFormatter
 fun FridgeScreen(
     navController: NavController,
     viewModel: FridgeViewModel,
+    fridgeId: String,
     initialFilter: String = "All" // Default to "All" if not provided
 ) {
     val allItems by viewModel.filteredFridgeItems.collectAsState()

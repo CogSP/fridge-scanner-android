@@ -70,15 +70,13 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.play.services.code.scanner)
     implementation(libs.okhttp)
-
-//    implementation(libs.androidx.camera.core.v110)
-//    implementation(libs.androidx.camera.camera2.v110)
-//    implementation(libs.androidx.camera.lifecycle)
-//    implementation(libs.androidx.camera.view)
-    //implementation(libs.accompanist.camera)
     implementation(libs.accompanist.permissions)
     implementation(libs.androidx.camera.core.v130)
     implementation(libs.androidx.camera.camera2.v130)
     implementation(libs.androidx.camera.lifecycle.v130)
     implementation(libs.androidx.camera.view.v130)
+    implementation(libs.retrofit)
+    implementation(libs.converter.gson)
+
+
 }

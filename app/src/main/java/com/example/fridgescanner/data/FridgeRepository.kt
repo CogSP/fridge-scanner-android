@@ -1,5 +1,8 @@
 package com.example.fridgescanner.data
 
+import com.example.fridgescanner.pythonanywhereAPI.ApiClient
+import com.example.fridgescanner.pythonanywhereAPI.FridgeUserRequest
+import com.example.fridgescanner.pythonanywhereAPI.FridgeUserResponse
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -143,6 +146,37 @@ class FridgeRepository {
                 // Add as a new item
                 mockItems.add(newItem)
             }
+        }
+    }
+
+
+    // Function to retrieve fridges for a user from the backend.
+    suspend fun getFridgesForUser(request: FridgeUserRequest): FridgeUserResponse {
+        return withContext(Dispatchers.IO) {
+            val response = ApiClient.fridgeApiService.getFridgesForUser(request)
+            if (response.isSuccessful) {
+                response.body() ?: FridgeUserResponse(
+                    success = false,
+                    message = "No response body",
+                    fridges = emptyList()
+                )
+            } else {
+                FridgeUserResponse(
+                    success = false,
+                    message = "Error: ${response.code()}",
+                    fridges = emptyList()
+                )
+            }
+        }
+    }
+
+
+    // Function to create a new fridge.
+    suspend fun createFridge(request: CreateFridgeRequest): CreateFridgeResponse {
+        return withContext(Dispatchers.IO) {
+            val response = ApiClient.fridgeApiService.createFridge(request)
+            if (response.isSuccessful) response.body() ?: CreateFridgeResponse(false, "Unknown error", null)
+            else CreateFridgeResponse(false, "Error: ${response.code()}", null)
         }
     }
 

@@ -1,5 +1,7 @@
+// LoginScreen.kt
 package com.example.fridgescanner.ui.login
 
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
@@ -26,6 +28,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
@@ -34,21 +37,48 @@ import androidx.navigation.NavController
 import com.example.fridgescanner.R
 import com.example.fridgescanner.Screen
 import com.example.fridgescanner.viewmodel.FridgeViewModel
+import android.util.Log
+
 
 @Composable
 fun LoginScreen(navController: NavController, viewModel: FridgeViewModel) {
     // State for user input
     var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-
     // Whether the password is visible or masked
     var passwordVisible by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
-    // For demonstration, we’ll do a no-op click for these actions
+    // Called when the Login button is clicked.
     fun onLoginClicked() {
-        viewModel.name = username
-        navController.navigate(Screen.HomePageScreen.withArgs(username))
+        // Call the loginUser function defined in the ViewModel.
+        viewModel.loginUser(username, password) { success, message ->
+            Log.d("MyTag", "success = $success")
+            Log.d("MyTag", "message = $message")
+            if (success) {
+                // Login succeeded.
+                Toast.makeText(context, "Login successful!", Toast.LENGTH_LONG).show()
+                // Ensure the ViewModel has the proper username.
+                viewModel.name = username
+
+                val route = Screen.HomePageScreen.withArgs(username)
+
+                Log.d("MyTag", "Navigating to: $route")
+
+                navController.navigate(route)
+
+
+                // Navigate to the HomePageScreen and clear the back stack.
+//                navController.navigate(Screen.HomePageScreen.withArgs(username)) {
+//                    popUpTo(Screen.LoginScreen.route) { inclusive = true }
+//                }
+            } else {
+                // Login failed; show an error message.
+                Toast.makeText(context, message ?: "Login failed", Toast.LENGTH_LONG).show()
+            }
+        }
     }
+
     fun onForgotPasswordClicked() {
         navController.navigate(Screen.ForgotPasswordScreen.route)
     }
@@ -64,12 +94,11 @@ fun LoginScreen(navController: NavController, viewModel: FridgeViewModel) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-
+        // Logo
         Icon(
             painter = painterResource(R.drawable.fridge_icon_login),
             contentDescription = "Fridge Logo",
-            modifier = Modifier.size(120.dp), // example size
-            //tint = MaterialTheme.colorScheme.primary
+            modifier = Modifier.size(120.dp)
         )
 
         Spacer(Modifier.height(180.dp))
@@ -115,7 +144,7 @@ fun LoginScreen(navController: NavController, viewModel: FridgeViewModel) {
         // "Forgotten your password?" Link
         TextButton(
             onClick = { onForgotPasswordClicked() },
-            modifier = Modifier.align(Alignment.End) // right-align
+            modifier = Modifier.align(Alignment.End)
         ) {
             Text("Forgotten your password?")
         }
@@ -124,20 +153,18 @@ fun LoginScreen(navController: NavController, viewModel: FridgeViewModel) {
 
         // Login Button
         Button(
-            onClick = {
-                onLoginClicked()
-            },
+            onClick = { onLoginClicked() },
             modifier = Modifier
                 .fillMaxWidth()
                 .height(56.dp),
-            shape = RoundedCornerShape(12.dp) // slightly rounded corners
+            shape = RoundedCornerShape(12.dp)
         ) {
             Text("Login")
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // "Register" link
+        // "Register" Link
         TextButton(
             onClick = { onRegisterClicked() },
             modifier = Modifier.align(Alignment.CenterHorizontally)
@@ -146,4 +173,3 @@ fun LoginScreen(navController: NavController, viewModel: FridgeViewModel) {
         }
     }
 }
-
