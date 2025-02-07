@@ -86,9 +86,9 @@ fun ProPromoScreen(navController: NavController) {
                     Text("Features & Benefits:", style = MaterialTheme.typography.titleMedium)
 
                     BulletPoint(text = "Unlimited items in your fridge")
+                    BulletPoint(text = "Unlimited number of fridges")
                     BulletPoint(text = "Advanced notifications and reminders")
                     BulletPoint(text = "Exclusive discount tracking for groceries")
-                    BulletPoint(text = "Priority customer support 24/7")
                 }
             }
 

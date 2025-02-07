@@ -17,9 +17,11 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.*
 import androidx.navigation.NavController
+import com.example.fridgescanner.R
 import com.example.fridgescanner.Screen
 import com.example.fridgescanner.viewmodel.FridgeViewModel
 import com.example.fridgescanner.data.FridgeItem
@@ -41,11 +43,24 @@ fun FridgeScreen(
     val currentFridgeId by viewModel.currentFridgeId.collectAsState()
 
     // If no fridge is currently selected, navigate back to ManageFridgesScreen.
-    LaunchedEffect(currentFridgeId) {
-        if (currentFridgeId == null) {
-            navController.navigate(Screen.ManageFridgesScreen.route)
+//    LaunchedEffect(currentFridgeId) {
+//        if (currentFridgeId == null) {
+//            navController.navigate(Screen.ManageFridgesScreen.route)
+//        }
+//    }
+
+    // If no fridge is selected, navigate away immediately and do not render UI.
+    if (currentFridgeId == null) {
+        // Use LaunchedEffect to perform a side-effect (navigation) once.
+        LaunchedEffect(Unit) {
+            navController.navigate(Screen.ManageFridgesScreen.route) {
+                popUpTo(Screen.FridgeScreen.route) { inclusive = true }
+            }
         }
+        // Return early so that nothing is rendered.
+        return
     }
+
 
     // State to control the "Change Fridge" confirmation dialog.
     var showChangeFridgeDialog by remember { mutableStateOf(false) }
@@ -355,10 +370,18 @@ fun FridgeHeader(
             }
 
             // Add a button to let the user change the fridge.
+//            IconButton(onClick = { onChangeFridgeClicked() }) {
+//                Icon(
+//                    imageVector = Icons.Default.Edit,  // Use an appropriate icon
+//                    contentDescription = "Change Fridge"
+//                )
+//            }
+            // Use your fridge icon instead of the edit icon.
             IconButton(onClick = { onChangeFridgeClicked() }) {
                 Icon(
-                    imageVector = Icons.Default.Edit,  // Use an appropriate icon
-                    contentDescription = "Change Fridge"
+                    painter = painterResource(id = R.drawable.fridge_icon_login),
+                    contentDescription = "Change Fridge",
+                    modifier = Modifier.size(36.dp)
                 )
             }
         }

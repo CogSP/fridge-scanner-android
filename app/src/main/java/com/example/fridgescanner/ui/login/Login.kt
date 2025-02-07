@@ -57,7 +57,7 @@ fun LoginScreen(navController: NavController, viewModel: FridgeViewModel) {
             Log.d("MyTag", "message = $message")
             if (success) {
                 // Login succeeded.
-                Toast.makeText(context, "Login successful!", Toast.LENGTH_LONG).show()
+                //Toast.makeText(context, "Login successful!", Toast.LENGTH_LONG).show()
                 // Ensure the ViewModel has the proper username.
                 viewModel.name = username
 

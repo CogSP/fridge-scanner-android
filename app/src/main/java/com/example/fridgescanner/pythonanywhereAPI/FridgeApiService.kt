@@ -5,6 +5,8 @@ import com.example.fridgescanner.data.CreateFridgeRequest
 import com.example.fridgescanner.data.CreateFridgeResponse
 import com.example.fridgescanner.data.Fridge
 import com.example.fridgescanner.data.FridgeItem
+import com.example.fridgescanner.data.ProductRequest
+import com.example.fridgescanner.data.ProductResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -37,4 +39,11 @@ interface FridgeApiService {
     suspend fun createFridge(
         @Body request: CreateFridgeRequest
     ): Response<CreateFridgeResponse>
+
+    // FridgeApiService.kt (add this method)
+    @POST("api/product")
+    suspend fun getProduct(
+        @Body request: ProductRequest
+    ): Response<ProductResponse>
+
 }

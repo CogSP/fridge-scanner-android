@@ -1,12 +1,13 @@
 package com.example.fridgescanner.ui.account
 
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.example.fridgescanner.Screen
 import com.example.fridgescanner.viewmodel.FridgeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -27,7 +28,7 @@ fun AccountScreen(navController: NavController, viewModel: FridgeViewModel) {
             )
         }
     ) { paddingValues ->
-        // Display account details
+        // Display account details and the logout button.
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -40,14 +41,32 @@ fun AccountScreen(navController: NavController, viewModel: FridgeViewModel) {
             )
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Display user's name from ViewModel
+            // Display user's name from ViewModel (add more fields as needed)
             Text(
                 text = "Name: ${viewModel.name}",
                 style = MaterialTheme.typography.bodyLarge
             )
-            // Add additional account fields as needed, for example:
-            // Text(text = "Email: ${viewModel.email}", style = MaterialTheme.typography.bodyLarge)
-            // ...
+
+            // This spacer pushes the Logout button to the bottom of the screen.
+            Spacer(modifier = Modifier.weight(1f))
+
+            // Logout Button
+            Button(
+                onClick = {
+                    // Call your logout logic.
+                    // For example, you might clear any saved session in your ViewModel.
+                    viewModel.logout()  // Ensure you implement this in your ViewModel.
+
+                    // Then navigate to the login screen.
+                    navController.navigate(Screen.LoginScreen.route) {
+                        // Clear back stack so that the user cannot go back to a logged-in screen.
+                        popUpTo(0)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Logout")
+            }
         }
     }
 }

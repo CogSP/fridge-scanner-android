@@ -125,20 +125,21 @@ class FridgeViewModel(private val repository: FridgeRepository, private val auth
 
 
     // Function to create a new fridge.
-    fun createFridge(fridgeName: String, fridgeColor: String, callback: (Boolean, String?) -> Unit) {
+    fun createFridge(fridgeName: String, fridgeColor: String, callback: (Boolean, String?, String?) -> Unit) {
         viewModelScope.launch {
             try {
                 val request = CreateFridgeRequest(username = name, name = fridgeName, color = fridgeColor)
                 val response: CreateFridgeResponse = repository.createFridge(request)
+                Log.d("FridgeViewModel", "Response from server: $response")
                 if (response.success && response.fridgeId != null) {
-                    callback(true, response.message)
+                    callback(true, response.message, response.fridgeId.toString())
                     // Refresh the list of fridges
                     fetchFridgesForUser()
                 } else {
-                    callback(false, response.message ?: "Creation failed")
+                    callback(false, response.message ?: "Creation failed", null)
                 }
             } catch (e: Exception) {
-                callback(false, e.localizedMessage)
+                callback(false, e.localizedMessage, null)
             }
         }
     }
@@ -260,6 +261,22 @@ class FridgeViewModel(private val repository: FridgeRepository, private val auth
                 callback(false, e.localizedMessage)
             }
         }
+    }
+
+    fun logout() {
+        // Clear the logged-in user's name.
+        name = ""
+        // Clear the current fridge selection.
+        clearCurrentFridgeId()
+        // Optionally clear other user-specific data.
+        _fridges.value = emptyList()
+        _fridgeItems.value = emptyList()
+        _shoppingList.value = emptyList()
+        _errorMessage.value = null
+        _searchQuery.value = ""
+        // You might also want to clear dark mode or other preferences if needed.
+        // For example: _darkModeEnabled.value = false
+        Log.d("FridgeViewModel", "User has been logged out.")
     }
 
     // Suppose you store them in a repository or a local list

@@ -13,6 +13,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -29,6 +31,7 @@ import com.example.fridgescanner.R
 import com.example.fridgescanner.Screen
 import com.example.fridgescanner.viewmodel.FridgeViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ManageFridgesScreen(navController: NavController, viewModel: FridgeViewModel) {
     // Observe the list of fridges from the view model.
@@ -43,101 +46,129 @@ fun ManageFridgesScreen(navController: NavController, viewModel: FridgeViewModel
         viewModel.fetchFridgesForUser()
     }
 
-    // Outer Box for overall padding and vertical centering.
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Column(
-            modifier = Modifier
-                .align(Alignment.Center) // Centers the entire Column vertically.
-                .fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            // Header Text.
-            Text(
-                text = "Select a Fridge",
-                style = MaterialTheme.typography.headlineMedium
+    // Wrap the entire screen in a Scaffold that provides a TopAppBar with a Back arrow.
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Select a Fridge") },
+                navigationIcon = {
+                    IconButton(onClick = {
+                        navController.popBackStack()
+                        navController.popBackStack()
+                    }) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowBack,
+                            contentDescription = "Back"
+                        )
+                    }
+                }
             )
-            Spacer(modifier = Modifier.height(24.dp))
+        }
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+            Column(
+                modifier = Modifier
+                    .align(Alignment.Center) // Centers the entire Column vertically.
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
 
-            if (fridges.isNotEmpty()) {
-                // Wrap the grid in BoxWithConstraints to get available maxWidth.
-                BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                    // Define spacing and desired minimum cell width.
-                    val spacing: Dp = 12.dp
-                    val minCellWidth: Dp = 150.dp
-                    // Calculate the number of columns that can fit.
-                    val colCount = maxOf(
-                        ((maxWidth + spacing) / (minCellWidth + spacing)).toInt(),
-                        1
-                    )
-                    // Compute the width for each card.
-                    val cardWidth = (maxWidth - spacing * (colCount + 2)) / colCount
+                Spacer(modifier = Modifier.height(24.dp))
 
-                    // Group the fridges into rows (each row will have up to colCount items).
-                    val rows = fridges.chunked(colCount)
+                if (fridges.isNotEmpty()) {
+                    // Wrap the grid in BoxWithConstraints to get available maxWidth.
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
+                        // Define spacing and desired minimum cell width.
+                        val spacing: Dp = 12.dp
+                        val minCellWidth: Dp = 150.dp
+                        // Calculate the number of columns that can fit.
+                        val colCount = maxOf(
+                            ((maxWidth + spacing) / (minCellWidth + spacing)).toInt(),
+                            1
+                        )
+                        // Compute the width for each card.
+                        val cardWidth = (maxWidth - spacing * (colCount + 2)) / colCount
 
-                    // Use LazyColumn to list each row.
-                    LazyColumn(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(spacing),
-                        contentPadding = PaddingValues(8.dp)
-                    ) {
-                        items(rows) { row ->
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                // Center the items in the row and space them by our defined spacing.
-                                horizontalArrangement = Arrangement.spacedBy(spacing, Alignment.CenterHorizontally)
-                            ) {
-                                row.forEach { fridge ->
-                                    // Wrap each card in a Box with a fixed width.
-                                    Box(modifier = Modifier.width(cardWidth)) {
-                                        Card(
-                                            modifier = Modifier
-                                                .fillMaxWidth() // Fills the width of the Box.
-                                                .aspectRatio(1f)
-                                                .clickable {
-                                                    viewModel.setCurrentFridgeId(fridge.id.toString())
-                                                    // Navigate to the FridgeScreen.
-                                                    // Here we pass a default filter ("All") via the route.
-                                                    navController.navigate(Screen.FridgeScreen.withArgs("All"))
-                                                },
-                                            // Use a neutral card background.
-                                            colors = CardDefaults.cardColors(
-                                                containerColor = MaterialTheme.colorScheme.surface
-                                            ),
-                                            shape = RoundedCornerShape(16.dp),
-                                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
-                                        ) {
-                                            // Inside the card, display a fridge logo tinted with the fridge's color and its name.
-                                            Column(
+                        // Group the fridges into rows (each row will have up to colCount items).
+                        val rows = fridges.chunked(colCount)
+
+                        // Use LazyColumn to list each row.
+                        LazyColumn(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalArrangement = Arrangement.spacedBy(spacing),
+                            contentPadding = PaddingValues(8.dp)
+                        ) {
+                            items(rows) { row ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    // Center the items in the row and space them by our defined spacing.
+                                    horizontalArrangement = Arrangement.spacedBy(
+                                        spacing,
+                                        Alignment.CenterHorizontally
+                                    )
+                                ) {
+                                    row.forEach { fridge ->
+                                        // Wrap each card in a Box with a fixed width.
+                                        Box(modifier = Modifier.width(cardWidth)) {
+                                            Card(
                                                 modifier = Modifier
-                                                    .fillMaxSize()
-                                                    .padding(8.dp),
-                                                verticalArrangement = Arrangement.Center,
-                                                horizontalAlignment = Alignment.CenterHorizontally
+                                                    .fillMaxWidth() // Fills the width of the Box.
+                                                    .aspectRatio(1f)
+                                                    .clickable {
+                                                        viewModel.setCurrentFridgeId(fridge.id.toString())
+                                                        // Navigate to the FridgeScreen.
+                                                        // Here we pass a default filter ("All") via the route.
+                                                        navController.navigate(
+                                                            Screen.FridgeScreen.withArgs(
+                                                                "All"
+                                                            )
+                                                        )
+                                                    },
+                                                // Use a neutral card background.
+                                                colors = CardDefaults.cardColors(
+                                                    containerColor = MaterialTheme.colorScheme.surface
+                                                ),
+                                                shape = RoundedCornerShape(16.dp),
+                                                elevation = CardDefaults.cardElevation(
+                                                    defaultElevation = 8.dp
+                                                )
                                             ) {
-                                                // Try parsing the fridge color; fallback to primary if error.
-                                                val tintColor = try {
-                                                    Color(android.graphics.Color.parseColor(fridge.color))
-                                                } catch (e: Exception) {
-                                                    MaterialTheme.colorScheme.primary
+                                                // Inside the card, display a fridge logo tinted with the fridge's color and its name.
+                                                Column(
+                                                    modifier = Modifier
+                                                        .fillMaxSize()
+                                                        .padding(8.dp),
+                                                    verticalArrangement = Arrangement.Center,
+                                                    horizontalAlignment = Alignment.CenterHorizontally
+                                                ) {
+                                                    // Try parsing the fridge color; fallback to primary if error.
+                                                    val tintColor = try {
+                                                        Color(
+                                                            android.graphics.Color.parseColor(
+                                                                fridge.color
+                                                            )
+                                                        )
+                                                    } catch (e: Exception) {
+                                                        MaterialTheme.colorScheme.primary
+                                                    }
+                                                    // Display the fridge icon tinted with the fridge's color.
+                                                    Image(
+                                                        painter = painterResource(id = R.drawable.fridge_icon_login),
+                                                        contentDescription = "Fridge Icon",
+                                                        modifier = Modifier.size(64.dp),
+                                                        colorFilter = ColorFilter.tint(tintColor)
+                                                    )
+                                                    Spacer(modifier = Modifier.height(8.dp))
+                                                    Text(
+                                                        text = fridge.name,
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        color = MaterialTheme.colorScheme.onSurface
+                                                    )
                                                 }
-                                                // Display the fridge icon tinted with the fridge's color.
-                                                Image(
-                                                    painter = painterResource(id = R.drawable.fridge_icon_login),
-                                                    contentDescription = "Fridge Icon",
-                                                    modifier = Modifier.size(64.dp),
-                                                    colorFilter = ColorFilter.tint(tintColor)
-                                                )
-                                                Spacer(modifier = Modifier.height(8.dp))
-                                                Text(
-                                                    text = fridge.name,
-                                                    style = MaterialTheme.typography.titleMedium,
-                                                    color = MaterialTheme.colorScheme.onSurface
-                                                )
                                             }
                                         }
                                     }
@@ -145,74 +176,92 @@ fun ManageFridgesScreen(navController: NavController, viewModel: FridgeViewModel
                             }
                         }
                     }
+                } else {
+                    // Show message when no fridges exist.
+                    Text(
+                        text = "No fridges available.",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.padding(vertical = 16.dp)
+                    )
                 }
-            } else {
-                // Show message when no fridges exist.
-                Text(
-                    text = "No fridges available.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    modifier = Modifier.padding(vertical = 16.dp)
-                )
-            }
 
-            Spacer(modifier = Modifier.height(24.dp))
-            Button(onClick = { showCreateForm = true }) {
-                Text("Create New Fridge")
-            }
-
-            if (showCreateForm) {
                 Spacer(modifier = Modifier.height(24.dp))
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                Button(onClick = { showCreateForm = true }) {
+                    Text("Create New Fridge")
+                }
+
+                if (showCreateForm) {
+                    Spacer(modifier = Modifier.height(24.dp))
+                    Card(
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                     ) {
-                        Text(
-                            text = "Create a New Fridge",
-                            style = MaterialTheme.typography.headlineSmall
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        OutlinedTextField(
-                            value = fridgeName,
-                            onValueChange = { fridgeName = it },
-                            label = { Text("Fridge Name") },
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Pick a Color",
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        ColorPicker(selectedColor = fridgeColor, onColorSelected = { fridgeColor = it })
-                        Spacer(modifier = Modifier.height(24.dp))
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Button(onClick = {
-                                viewModel.createFridge(fridgeName, fridgeColor) { success, message ->
-                                    if (success) {
-                                        Toast.makeText(context, "Fridge created", Toast.LENGTH_SHORT).show()
-                                        showCreateForm = false
-                                        fridgeName = ""
-                                        fridgeColor = ""
-                                    } else {
-                                        Toast.makeText(context, message ?: "Creation failed", Toast.LENGTH_SHORT).show()
+                            Text(
+                                text = "Create a New Fridge",
+                                style = MaterialTheme.typography.headlineSmall
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            OutlinedTextField(
+                                value = fridgeName,
+                                onValueChange = { fridgeName = it },
+                                label = { Text("Fridge Name") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Text(
+                                text = "Pick a Color",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            ColorPicker(
+                                selectedColor = fridgeColor,
+                                onColorSelected = { fridgeColor = it })
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceEvenly
+                            ) {
+                                Button(onClick = {
+                                    viewModel.createFridge(
+                                        fridgeName,
+                                        fridgeColor
+                                    ) { success, message, newFridgeId ->
+                                        if (success && newFridgeId != null) {
+                                            Toast.makeText(
+                                                context,
+                                                "Fridge created",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                            showCreateForm = false
+                                            fridgeName = ""
+                                            fridgeColor = ""
+
+                                            //viewModel.setCurrentFridgeId(newFridgeId)
+
+                                            //navController.navigate(Screen.FridgeScreen.withArgs("All"))
+
+                                        } else {
+                                            Toast.makeText(
+                                                context,
+                                                message ?: "Creation failed",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        }
                                     }
+                                }) {
+                                    Text("Create")
                                 }
-                            }) {
-                                Text("Create")
-                            }
-                            OutlinedButton(onClick = { showCreateForm = false }) {
-                                Text("Cancel")
+                                OutlinedButton(onClick = { showCreateForm = false }) {
+                                    Text("Cancel")
+                                }
                             }
                         }
                     }
@@ -221,6 +270,7 @@ fun ManageFridgesScreen(navController: NavController, viewModel: FridgeViewModel
         }
     }
 }
+
 
 @Composable
 fun ColorPicker(selectedColor: String, onColorSelected: (String) -> Unit) {
