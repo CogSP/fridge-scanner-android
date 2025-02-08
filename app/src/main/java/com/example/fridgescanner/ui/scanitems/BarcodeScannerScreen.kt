@@ -8,6 +8,7 @@ import android.graphics.Rect
 import android.graphics.RectF
 import android.os.Handler
 import android.os.Looper
+import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.OptIn
@@ -36,11 +37,18 @@ import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.OkHttpClient
 import okhttp3.Request
-import okhttp3.Response
+//import okhttp3.Response
 import org.json.JSONObject
 import java.io.IOException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import com.example.fridgescanner.data.ProductRequest
+import com.example.fridgescanner.data.ProductResponse
+import com.example.fridgescanner.pythonanywhereAPI.ApiClient
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import retrofit2.Response
 
 @Composable
 fun BarcodeScannerScreen(
@@ -259,23 +267,40 @@ private fun processImageProxy(
                         val context = previewView.context
 
                         if (hasNavigatedState.value == 1) {
-                            fetchProductInfo(
-                                barcodeValue = value,
-                                onSuccess = { message ->
-                                    ToastHelper.showToast(context, message)
-                                    // Ensure navigation happens on the main thread
-                                    Handler(Looper.getMainLooper()).post {
-                                        onBack()
+//                            fetchProductInfo(
+//                                barcodeValue = value,
+//                                onSuccess = { message ->
+//                                    ToastHelper.showToast(context, message)
+//                                    // Ensure navigation happens on the main thread
+//                                    Handler(Looper.getMainLooper()).post {
+//                                        onBack()
+//                                    }
+//                                },
+//                                onFailure = { errorMsg ->
+//                                    ToastHelper.showToast(context, errorMsg)
+//                                },
+//                                viewModel = viewModel,
+//                                context = context
+//                            )
+                            barcodeValue?.let { value ->
+                                if (hasNavigatedState.value == 1) {
+                                    // Launch a coroutine on the main thread.
+                                    CoroutineScope(Dispatchers.Main).launch {
+                                        // Get the current fridge id from the ViewModel.
+                                        // Ensure it's not null and convert to an Int; adjust if your data model differs.
+                                        val currentFridgeIdStr = viewModel.currentFridgeId.value
+                                        val fridgeId = currentFridgeIdStr?.toIntOrNull() ?: 0
+                                        val productResponse = fetchProductInfoRetrofit(value, previewView.context, fridgeId, viewModel.selectedExpiryDate.value)
+                                        if (productResponse != null && productResponse.success) {
+                                            ToastHelper.showToast(previewView.context, "${productResponse.product_information?.name} registered!")
+                                            onBack()  // navigate back or perform another action
+                                        } else {
+                                            ToastHelper.showToast(previewView.context, "No product info found for barcode $value")
+                                        }
                                     }
-                                },
-                                onFailure = { errorMsg ->
-                                    ToastHelper.showToast(context, errorMsg)
-                                },
-                                viewModel = viewModel,
-                                context = context
-                            )
+                                }
+                            }
                         }
-
                     }
                     firstBarcode.boundingBox?.let {
                         updateOverlay(it, imageProxy, previewView, overlayView)
@@ -350,184 +375,210 @@ private fun transformBoundingBox(
 
 
 
-fun fetchProductInfo(
+
+suspend fun fetchProductInfoRetrofit(
     barcodeValue: String,
-    onSuccess: (String) -> Unit,
-    onFailure: (String) -> Unit,
-    viewModel: FridgeViewModel,
-    context: Context // Pass context to use in ToastHelper
-) {
-
-    println("Fetching product info for barcode: $barcodeValue")
-
-    val client = OkHttpClient()
-    val url = "https://world.openfoodfacts.org/api/v0/product/$barcodeValue.json"
-
-    val request = Request.Builder()
-        .url(url)
-        .build()
-
-    client.newCall(request).enqueue(object : Callback {
-        override fun onFailure(call: Call, e: IOException) {
-            // Use ToastHelper to show failure message
-            ToastHelper.showToast(context, "Failed to fetch product info: ${e.localizedMessage}")
-            onFailure("Failed to fetch product info: ${e.localizedMessage}")
+    context: Context,
+    fridgeId: Int,
+    expiryDate: String
+): ProductResponse? {
+    return try {
+        // Call your PythonAnywhere endpoint via Retrofit.
+        val response: Response<ProductResponse> = ApiClient.fridgeApiService.getProduct(
+            ProductRequest(id = barcodeValue, fridge_id = fridgeId, expiry_date = expiryDate)
+        )
+        Log.d("Retrofit", "Response: $response")
+        if (response.isSuccessful) {
+            response.body()
+        } else {
+            ToastHelper.showToast(context, "Error: ${response.code()}")
+            null
         }
-
-        override fun onResponse(call: Call, response: Response) {
-
-            println("OnResponse called with response: $response")
-
-            response.use { res ->
-                if (res.isSuccessful) {
-                    val body = res.body?.string()
-                    val json = JSONObject(body ?: "{}")
-                    val product = json.optJSONObject("product")
-                    if (product != null) {
-                        // Extract product details...
-                        val id = product.optString("code", "0").toLongOrNull() ?: 0L
-                        var productNameEN =
-                            product.optString("product_name_en", "_")
-
-                        if (productNameEN == "" || productNameEN == "_") {
-                            productNameEN = product.optString("product_name", "_")
-                        }
-
-
-                        val brand = product.optString("brands", "_")
-                        val category = product.optString("categories", "_")
-                        // Read the raw allergens string
-                        val rawAllergens = product.optString("allergens", "_")
-
-                        // Split by commas, remove "en:", and join back together as needed
-                        val allergens = if (rawAllergens != "_") {
-                            rawAllergens
-                                .split(",")
-                                .map { it.removePrefix("en:").trim() } // Remove "en:" and trim spaces
-                                .joinToString(", ")
-                        } else {
-                            "_"
-                        }
-
-                        val conservationConditions = product.optString(
-                            "conservation_conditions",
-                            "_"
-                        )
-
-                        val countriesHierarchy = product.optJSONArray("countries_hierarchy")
-                        val countriesWhereSold: String
-
-                        if (countriesHierarchy != null && countriesHierarchy.length() > 0) {
-                            // Build a list of country strings from the array
-                            val countryList = mutableListOf<String>()
-                            for (i in 0 until countriesHierarchy.length()) {
-                                // read the string, then remove the "en:" prefix if present
-                                val rawCountry = countriesHierarchy.optString(i)
-                                val countryWithoutPrefix = rawCountry.removePrefix("en:")
-                                if (countryWithoutPrefix.isNotEmpty()) {
-                                    countryList.add(countryWithoutPrefix)
-                                }
-                            }
-                            // Join them into a single comma-separated string (or any format you prefer)
-                            countriesWhereSold = countryList.joinToString(separator = ", ")
-                        } else {
-                            countriesWhereSold = "_"
-                        }
-
-                        val countriesImported =
-                            product.optString("countries_imported", "_")
-                        val ownerImported = product.optString("owner_imported", "_")
-                        val preparation =
-                            product.optString("preparation", "_")
-                        val purchasePlaces =
-                            product.optString("purchase_places", "_")
-                        val productQuantity = product.optString("quantity", "_")
-                        val productQuantityUnit =
-                            product.optString("quantity_unit", "_")
-                        val expirationDate =
-                            product.optString("expiration_date", "_")
-                        val productType =
-                            product.optString("product_type", "_")
-                        val customerService =
-                            product.optString("customer_service", "_")
-                        val imageUrl = product.optString("image_url", "_")
-                        val ingredientsImageEn = product
-                            .optJSONObject("selected_images")
-                            ?.optJSONObject("ingredients")
-                            ?.optJSONObject("display")
-                            ?.optString("en", "_")
-
-                        // Nutriments...
-                        val carbohydrates100g =
-                            product.optJSONObject("nutriments")?.optString("carbohydrates_100g")
-                        val energyKcal100g =
-                            product.optJSONObject("nutriments")?.optString("energy-kcal_100g")
-                        val fat100g = product.optJSONObject("nutriments")?.optString("fat_100g")
-                        val fiber100g =
-                            product.optJSONObject("nutriments")?.optString("fiber_100g")
-                        val proteins100g =
-                            product.optJSONObject("nutriments")?.optString("proteins_100g")
-                        val salt100g =
-                            product.optJSONObject("nutriments")?.optString("salt_100g")
-                        val saturatedFat100g =
-                            product.optJSONObject("nutriments")?.optString("saturated-fat_100g")
-                        val sodium100g =
-                            product.optJSONObject("nutriments")?.optString("sodium_100g")
-                        val sugars100g =
-                            product.optJSONObject("nutriments")?.optString("sugars_100g")
-
-                        val fridgeItem = FridgeItem(
-                            id = id,
-                            name = productNameEN,
-                            expirationDate = expirationDate,
-                            quantity = 1,
-                            brand = brand,
-                            category = category,
-                            allergens = allergens,
-                            conservationConditions = conservationConditions,
-                            countriesWhereSold = countriesWhereSold,
-                            countriesImported = countriesImported,
-                            ownerImported = ownerImported,
-                            preparation = preparation,
-                            purchasePlaces = purchasePlaces,
-                            productQuantity = productQuantity,
-                            productQuantityUnit = productQuantityUnit,
-                            productType = productType,
-                            customerService = customerService,
-                            imageUrl = imageUrl,
-                            ingredientsImageEn = ingredientsImageEn,
-                            carbohydrates100g = carbohydrates100g,
-                            energyKcal100g = energyKcal100g,
-                            fat100g = fat100g,
-                            fiber100g = fiber100g,
-                            proteins100g = proteins100g,
-                            salt100g = salt100g,
-                            saturatedFat100g = saturatedFat100g,
-                            sodium100g = sodium100g,
-                            sugars100g = sugars100g
-                        )
-
-                        // Add or update to fridge using ViewModel
-                        viewModel.addOrUpdateFridgeItem(fridgeItem)
-
-                        // Use ToastHelper to show success message
-                        ToastHelper.showToast(context, "${fridgeItem.name} registered!")
-                        onSuccess("${fridgeItem.name} registered!")
-                    } else {
-                        // Switch to the main thread to show the Toast
-                        ToastHelper.showToast(
-                            context,
-                            "No product information found for barcode $barcodeValue"
-                        )
-                        onFailure("No product information found for barcode $barcodeValue")
-                    }
-                } else {
-                    // Use ToastHelper to show API error
-                    ToastHelper.showToast(context, "API error: ${res.message}")
-                    onFailure("API error: ${res.message}")
-                }
-            }
-        }
-    })
+    } catch (e: Exception) {
+        ToastHelper.showToast(context, "Exception: ${e.localizedMessage}")
+        null
+    }
 }
 
+
+//fun fetchProductInfo(
+//    barcodeValue: String,
+//    onSuccess: (String) -> Unit,
+//    onFailure: (String) -> Unit,
+//    viewModel: FridgeViewModel,
+//    context: Context // Pass context to use in ToastHelper
+//) {
+//
+//    println("Fetching product info for barcode: $barcodeValue")
+//
+//    val client = OkHttpClient()
+//    val url = "https://world.openfoodfacts.org/api/v0/product/$barcodeValue.json"
+//
+//    val request = Request.Builder()
+//        .url(url)
+//        .build()
+//
+//    client.newCall(request).enqueue(object : Callback {
+//        override fun onFailure(call: Call, e: IOException) {
+//            // Use ToastHelper to show failure message
+//            ToastHelper.showToast(context, "Failed to fetch product info: ${e.localizedMessage}")
+//            onFailure("Failed to fetch product info: ${e.localizedMessage}")
+//        }
+//
+//        override fun onResponse(call: Call, response: Response) {
+//
+//            println("OnResponse called with response: $response")
+//
+//            response.use { res ->
+//                if (res.isSuccessful) {
+//                    val body = res.body?.string()
+//                    val json = JSONObject(body ?: "{}")
+//                    val product = json.optJSONObject("product")
+//                    if (product != null) {
+//                        // Extract product details...
+//                        val id = product.optString("code", "0").toLongOrNull() ?: 0L
+//                        var productNameEN =
+//                            product.optString("product_name_en", "_")
+//
+//                        if (productNameEN == "" || productNameEN == "_") {
+//                            productNameEN = product.optString("product_name", "_")
+//                        }
+//
+//
+//                        val brand = product.optString("brands", "_")
+//                        val category = product.optString("categories", "_")
+//                        // Read the raw allergens string
+//                        val rawAllergens = product.optString("allergens", "_")
+//
+//                        // Split by commas, remove "en:", and join back together as needed
+//                        val allergens = if (rawAllergens != "_") {
+//                            rawAllergens
+//                                .split(",")
+//                                .map { it.removePrefix("en:").trim() } // Remove "en:" and trim spaces
+//                                .joinToString(", ")
+//                        } else {
+//                            "_"
+//                        }
+//
+//                        val conservationConditions = product.optString(
+//                            "conservation_conditions",
+//                            "_"
+//                        )
+//
+//                        val countriesHierarchy = product.optJSONArray("countries_hierarchy")
+//                        val countriesWhereSold: String
+//
+//                        if (countriesHierarchy != null && countriesHierarchy.length() > 0) {
+//                            // Build a list of country strings from the array
+//                            val countryList = mutableListOf<String>()
+//                            for (i in 0 until countriesHierarchy.length()) {
+//                                // read the string, then remove the "en:" prefix if present
+//                                val rawCountry = countriesHierarchy.optString(i)
+//                                val countryWithoutPrefix = rawCountry.removePrefix("en:")
+//                                if (countryWithoutPrefix.isNotEmpty()) {
+//                                    countryList.add(countryWithoutPrefix)
+//                                }
+//                            }
+//                            // Join them into a single comma-separated string (or any format you prefer)
+//                            countriesWhereSold = countryList.joinToString(separator = ", ")
+//                        } else {
+//                            countriesWhereSold = "_"
+//                        }
+//
+//                        val countriesImported =
+//                            product.optString("countries_imported", "_")
+//                        val ownerImported = product.optString("owner_imported", "_")
+//                        val preparation =
+//                            product.optString("preparation", "_")
+//                        val purchasePlaces =
+//                            product.optString("purchase_places", "_")
+//                        val productQuantity = product.optString("quantity", "_")
+//                        val productQuantityUnit =
+//                            product.optString("quantity_unit", "_")
+//                        val expiry_date =
+//                            product.optString("expiration_date", "_")
+//                        val productType =
+//                            product.optString("product_type", "_")
+//                        val customerService =
+//                            product.optString("customer_service", "_")
+//                        val imageUrl = product.optString("image_url", "_")
+//                        val ingredientsImageEn = product
+//                            .optJSONObject("selected_images")
+//                            ?.optJSONObject("ingredients")
+//                            ?.optJSONObject("display")
+//                            ?.optString("en", "_")
+//
+//                        // Nutriments...
+//                        val carbohydrates100g =
+//                            product.optJSONObject("nutriments")?.optString("carbohydrates_100g")
+//                        val energyKcal100g =
+//                            product.optJSONObject("nutriments")?.optString("energy-kcal_100g")
+//                        val fat100g = product.optJSONObject("nutriments")?.optString("fat_100g")
+//                        val fiber100g =
+//                            product.optJSONObject("nutriments")?.optString("fiber_100g")
+//                        val proteins100g =
+//                            product.optJSONObject("nutriments")?.optString("proteins_100g")
+//                        val salt100g =
+//                            product.optJSONObject("nutriments")?.optString("salt_100g")
+//                        val saturatedFat100g =
+//                            product.optJSONObject("nutriments")?.optString("saturated-fat_100g")
+//                        val sodium100g =
+//                            product.optJSONObject("nutriments")?.optString("sodium_100g")
+//                        val sugars100g =
+//                            product.optJSONObject("nutriments")?.optString("sugars_100g")
+//
+//                        val fridgeItem = FridgeItem(
+//                            id = id,
+//                            name = productNameEN,
+//                            expiry_date = expiry_date,
+//                            quantity = 1,
+//                            brand = brand,
+//                            category = category,
+//                            allergens = allergens,
+//                            conservationConditions = conservationConditions,
+//                            countriesWhereSold = countriesWhereSold,
+//                            countriesImported = countriesImported,
+//                            ownerImported = ownerImported,
+//                            preparation = preparation,
+//                            purchasePlaces = purchasePlaces,
+//                            productQuantity = productQuantity,
+//                            productQuantityUnit = productQuantityUnit,
+//                            productType = productType,
+//                            customerService = customerService,
+//                            imageUrl = imageUrl,
+//                            ingredientsImageEn = ingredientsImageEn,
+//                            carbohydrates100g = carbohydrates100g,
+//                            energyKcal100g = energyKcal100g,
+//                            fat100g = fat100g,
+//                            fiber100g = fiber100g,
+//                            proteins100g = proteins100g,
+//                            salt100g = salt100g,
+//                            saturatedFat100g = saturatedFat100g,
+//                            sodium100g = sodium100g,
+//                            sugars100g = sugars100g
+//                        )
+//
+//                        // Add or update to fridge using ViewModel
+//                        viewModel.addOrUpdateFridgeItem(fridgeItem)
+//
+//                        // Use ToastHelper to show success message
+//                        ToastHelper.showToast(context, "${fridgeItem.name} registered!")
+//                        onSuccess("${fridgeItem.name} registered!")
+//                    } else {
+//                        // Switch to the main thread to show the Toast
+//                        ToastHelper.showToast(
+//                            context,
+//                            "No product information found for barcode $barcodeValue"
+//                        )
+//                        onFailure("No product information found for barcode $barcodeValue")
+//                    }
+//                } else {
+//                    // Use ToastHelper to show API error
+//                    ToastHelper.showToast(context, "API error: ${res.message}")
+//                    onFailure("API error: ${res.message}")
+//                }
+//            }
+//        }
+//    })
+//}
+//

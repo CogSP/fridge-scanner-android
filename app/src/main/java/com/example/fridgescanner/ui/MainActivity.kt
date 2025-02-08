@@ -12,7 +12,7 @@ import com.example.fridgescanner.data.FridgeRepository
 import com.example.fridgescanner.pythonanywhereAPI.ApiClient
 import com.example.fridgescanner.pythonanywhereAPI.AuthService
 import com.example.fridgescanner.ui.notification.createNotificationChannel
-import com.example.fridgescanner.ui.notification.scheduleFridgeNotifications
+//import com.example.fridgescanner.ui.notification.scheduleFridgeNotifications
 import com.example.fridgescanner.ui.theme.FridgeScannerTheme
 import com.example.fridgescanner.viewmodel.FridgeViewModel
 import com.example.fridgescanner.viewmodel.FridgeViewModelFactory
@@ -29,7 +29,7 @@ class MainActivity : ComponentActivity() {
         createNotificationChannel(this)
 
         // 2) Schedule background checks daily
-        scheduleFridgeNotifications(this)
+//        scheduleFridgeNotifications(this)
 
         setContent {
             // 1) Create / Provide the repository & ViewModel

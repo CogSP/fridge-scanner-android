@@ -31,6 +31,14 @@ class FridgeViewModel(private val repository: FridgeRepository, private val auth
     val darkModeEnabled: StateFlow<Boolean> = _darkModeEnabled
 
 
+    // In your ViewModel (FridgeViewModel):
+    private val _selectedExpiryDate = MutableStateFlow("")
+    val selectedExpiryDate: StateFlow<String> = _selectedExpiryDate.asStateFlow()
+
+    fun setSelectedExpiryDate(date: String) {
+        _selectedExpiryDate.value = date
+    }
+
     // FridgeViewModel.kt (add these inside your ViewModel class)
     private val _currentFridgeId = MutableStateFlow<String?>(null)
     val currentFridgeId: StateFlow<String?> = _currentFridgeId.asStateFlow()
@@ -144,58 +152,84 @@ class FridgeViewModel(private val repository: FridgeRepository, private val auth
         }
     }
 
-
-
-    fun fetchFridgeItems() {
+    fun fetchFridgeItemsForCurrentFridge() {
         viewModelScope.launch {
-            _isLoading.value = true
-            _errorMessage.value = null
-            try {
-                val items = repository.getFridgeItems()
-                _fridgeItems.value = items.toList()
-            } catch (e: Exception) {
-                _errorMessage.value = "Failed to load fridge items."
-            } finally {
-                _isLoading.value = false
+            // Assuming currentFridgeId is a String; convert it to an Int.
+            val fridgeId = currentFridgeId.value?.toIntOrNull()
+            Log.d("FridgeViewModel", "Fetching items for fridge ID: $fridgeId")
+            if (fridgeId != null) {
+                _fridgeItems.value = repository.getFridgeItems(fridgeId)
+                Log.d("FridgeViewModel", "Fetched items: ${_fridgeItems.value}")
+            } else {
+                _fridgeItems.value = emptyList()
             }
         }
     }
+
+
+//    fun fetchFridgeItems() {
+//        viewModelScope.launch {
+//            _isLoading.value = true
+//            _errorMessage.value = null
+//            try {
+//                val items = repository.getFridgeItems()
+//                _fridgeItems.value = items.toList()
+//            } catch (e: Exception) {
+//                _errorMessage.value = "Failed to load fridge items."
+//            } finally {
+//                _isLoading.value = false
+//            }
+//        }
+//    }
 
     fun fetchFridgeItemById(id: Long) {
         viewModelScope.launch {
             _isLoading.value = true
             _errorMessage.value = null
-            try {
-                val item = repository.getFridgeItemById(id)
+            val fridgeId = currentFridgeId.value?.toIntOrNull()
+            if (fridgeId != null) {
+                val item = repository.getFridgeItemById(id, fridgeId)
                 _fridgeItemDetail.value = item
+                Log.d("FridgeViewModel", "Fetched item PORCACCIO: $item")
                 if (item == null) {
                     _errorMessage.value = "Item not found."
                 }
-            } catch (e: Exception) {
-                _errorMessage.value = "Failed to load item details"
-            } finally {
-                _isLoading.value = false
+            } else {
+                _errorMessage.value = "Invalid fridge id."
             }
+            _isLoading.value = false
         }
     }
+
 
     fun setSearchQuery(query: String) {
         _searchQuery.value = query
     }
 
-    fun addOrUpdateFridgeItem(newItem: FridgeItem) {
-        viewModelScope.launch {
-            repository.addOrUpdateFridgeItem(newItem)
-            fetchFridgeItems()
-        }
-    }
+//    fun addOrUpdateFridgeItem(newItem: FridgeItem) {
+//        viewModelScope.launch {
+//            repository.addOrUpdateFridgeItem(newItem)
+//            fetchFridgeItems()
+//        }
+//    }
 
     fun deleteFridgeItems(itemIds: List<Long>) {
         viewModelScope.launch {
-            repository.deleteItemsByIds(itemIds)
-            fetchFridgeItems()
+            // Convert the current fridge ID (assumed to be stored as a String) to an Int.
+            val fridgeId = currentFridgeId.value?.toIntOrNull()
+            if (fridgeId == null) {
+                _errorMessage.value = "Invalid fridge id."
+                return@launch
+            }
+            val success = repository.deleteFridgeItems(itemIds, fridgeId)
+            if (!success) {
+                _errorMessage.value = "Failed to delete selected items."
+            }
+            // Refresh the fridge items for the current fridge.
+            fetchFridgeItemsForCurrentFridge()
         }
     }
+
 
 
     fun addToShoppingList(item: String) {
@@ -207,6 +241,24 @@ class FridgeViewModel(private val repository: FridgeRepository, private val auth
             }
         }
     }
+
+    fun removeFridgeItem(itemId: Long) {
+        viewModelScope.launch {
+            // Ensure the current fridge ID is valid.
+            val fridgeId = currentFridgeId.value?.toIntOrNull()
+            if (fridgeId != null) {
+                val success = repository.removeFridgeItem(itemId, fridgeId)
+                if (!success) {
+                    _errorMessage.value = "Failed to remove item"
+                }
+                // Refresh the list of items for the current fridge.
+                fetchFridgeItemsForCurrentFridge()
+            } else {
+                _errorMessage.value = "Invalid fridge id"
+            }
+        }
+    }
+
 
 
 

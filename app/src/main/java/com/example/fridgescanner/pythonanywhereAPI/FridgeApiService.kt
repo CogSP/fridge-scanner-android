@@ -5,6 +5,12 @@ import com.example.fridgescanner.data.CreateFridgeRequest
 import com.example.fridgescanner.data.CreateFridgeResponse
 import com.example.fridgescanner.data.Fridge
 import com.example.fridgescanner.data.FridgeItem
+import com.example.fridgescanner.data.FridgeItemDetailRequest
+import com.example.fridgescanner.data.FridgeItemDetailResponse
+import com.example.fridgescanner.data.FridgeItemRemoveRequest
+import com.example.fridgescanner.data.FridgeItemRequest
+import com.example.fridgescanner.data.FridgeItemResponse
+import com.example.fridgescanner.data.GenericResponse
 import com.example.fridgescanner.data.ProductRequest
 import com.example.fridgescanner.data.ProductResponse
 import retrofit2.Response
@@ -40,10 +46,24 @@ interface FridgeApiService {
         @Body request: CreateFridgeRequest
     ): Response<CreateFridgeResponse>
 
-    // FridgeApiService.kt (add this method)
+    // Get a product
     @POST("api/product")
     suspend fun getProduct(
         @Body request: ProductRequest
     ): Response<ProductResponse>
 
+    @POST("api/fridgeitems/get")
+    suspend fun getFridgeItems(
+        @Body request: FridgeItemRequest
+    ): Response<FridgeItemResponse>
+
+    @POST("api/fridgeitemdetail/get")
+    suspend fun getFridgeItemById(
+        @Body request: FridgeItemDetailRequest
+    ): Response<FridgeItemDetailResponse>
+
+    @POST("api/fridgeitem/remove")
+    suspend fun removeFridgeItem(
+        @Body request: FridgeItemRemoveRequest
+    ): Response<GenericResponse>
 }

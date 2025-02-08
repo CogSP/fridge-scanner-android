@@ -66,7 +66,7 @@ fun FridgeItemCard(item: FridgeItem, navController: NavController) {
                     fontWeight = FontWeight.Bold // Make the name bold
                 )
                 Text(
-                    text = "Expires on: ${item.expirationDate}",
+                    text = "Expires on: ${item.expiry_date}",
                     style = MaterialTheme.typography.bodyMedium,
                     color = Color.Gray // Use a different color for the expiration date
                 )

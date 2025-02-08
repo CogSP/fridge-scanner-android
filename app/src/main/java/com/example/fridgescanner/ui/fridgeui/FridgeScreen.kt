@@ -1,5 +1,8 @@
 package com.example.fridgescanner.ui.fridgeui
 
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
@@ -29,6 +32,7 @@ import com.example.fridgescanner.ui.BottomNavigationBar
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FridgeScreen(
@@ -59,8 +63,11 @@ fun FridgeScreen(
         }
         // Return early so that nothing is rendered.
         return
+    } else {
+        LaunchedEffect(currentFridgeId) {
+            viewModel.fetchFridgeItemsForCurrentFridge()
+        }
     }
-
 
     // State to control the "Change Fridge" confirmation dialog.
     var showChangeFridgeDialog by remember { mutableStateOf(false) }
@@ -105,7 +112,7 @@ fun FridgeScreen(
     val finalItems = remember(filteredItems, selectedOrderOption) {
         when (selectedOrderOption) {
             "Alphabetically" -> filteredItems.sortedBy { it.name.lowercase() }
-            "By Expiration Date" -> filteredItems.sortedBy { parseDate(it.expirationDate) }
+            "By Expiration Date" -> filteredItems.sortedBy { parseDate(it.expiry_date) }
             else -> filteredItems
         }
     }
@@ -274,7 +281,8 @@ fun FridgeScreen(
                                         multiSelectMode = true
                                         selectedItems.add(selectedItem.id)
                                     }
-                                }
+                                },
+                                onRemoveItem = { }
                             )
                         }
                     }
@@ -330,6 +338,7 @@ fun FridgeScreen(
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 fun parseDate(dateStr: String): LocalDate? {
     return runCatching {
         LocalDate.parse(dateStr, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
@@ -421,7 +430,8 @@ fun MultiSelectFridgeItemCard(
     multiSelectMode: Boolean,
     isSelected: Boolean,
     onSelectItem: (FridgeItem) -> Unit,
-    onLongPressItem: (FridgeItem) -> Unit
+    onLongPressItem: (FridgeItem) -> Unit,
+    onRemoveItem: (FridgeItem) -> Unit
 ) {
     // We highlight or style the card differently if it's selected
     val cardColor = if (isSelected) Color(0xFFB3E5FC) else MaterialTheme.colorScheme.surfaceVariant
@@ -454,7 +464,7 @@ fun MultiSelectFridgeItemCard(
                 style = MaterialTheme.typography.titleMedium,
             )
             Text(
-                text = "Expires on: ${item.expirationDate}",
+                text = "Expires on: ${item.expiry_date}",
                 style = MaterialTheme.typography.bodyMedium,
             )
             // If isExpired, isExpiringSoon, or other status, you can display warnings or color

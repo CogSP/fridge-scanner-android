@@ -1,6 +1,7 @@
 // ManageFridgesScreen.kt
 package com.example.fridgescanner.ui.fridgeui
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
@@ -43,7 +44,9 @@ fun ManageFridgesScreen(navController: NavController, viewModel: FridgeViewModel
 
     // Fetch fridges when the screen is first displayed.
     LaunchedEffect(Unit) {
+        Log.d("ManageFridgesScreen", "Fetching fridges...")
         viewModel.fetchFridgesForUser()
+        Log.d("ManageFridgesScreen", "Fetched fridges")
     }
 
     // Wrap the entire screen in a Scaffold that provides a TopAppBar with a Back arrow.

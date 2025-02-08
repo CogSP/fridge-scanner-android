@@ -2,7 +2,19 @@
 package com.example.fridgescanner.data
 
 data class ProductRequest(
-    val id: String
+    val id: String,
+    val fridge_id: Int,
+    val expiry_date: String
+)
+
+data class FridgeItemRemoveRequest(
+    val itemid: Long,
+    val fridgeid: Int
+)
+
+data class GenericResponse(
+    val success: Boolean,
+    val message: String?
 )
 
 data class ProductInformation(

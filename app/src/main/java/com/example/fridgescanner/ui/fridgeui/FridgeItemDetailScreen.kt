@@ -1,6 +1,7 @@
 package com.example.fridgescanner.ui.fridgeui
 
 
+import android.util.Log
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,6 +29,7 @@ import com.example.fridgescanner.viewmodel.FridgeViewModel
 fun FridgeItemDetailScreen(itemId: Long, navController: NavController, viewModel: FridgeViewModel) {
 
     LaunchedEffect(key1 = itemId) {
+        Log.d("FridgeItemDetailScreen", "Fetching item details for ID: $itemId")
         viewModel.fetchFridgeItemById(itemId)
     }
 
@@ -124,7 +126,7 @@ fun FridgeItemDetailScreen(itemId: Long, navController: NavController, viewModel
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Expiration Date: ${item!!.expirationDate}",
+                                    text = "Expiration Date: ${item!!.expiry_date}",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }
@@ -133,39 +135,39 @@ fun FridgeItemDetailScreen(itemId: Long, navController: NavController, viewModel
                         item { // Nutriments Section
                             ExpandableSection(title = "Nutriments (per 100g)", defaultExpanded = false) {
                                 Text(
-                                    text = "Carbohydrates: ${item!!.carbohydrates100g} g",
+                                    text = "Carbohydrates: ${item!!.charbo} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Energy: ${item!!.energyKcal100g} kcal",
+                                    text = "Energy: ${item!!.energy} kcal",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Fat: ${item!!.fat100g} g",
+                                    text = "Fat: ${item!!.fat} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Fiber: ${item!!.fiber100g} g",
+                                    text = "Fiber: ${item!!.fibers} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Proteins: ${item!!.proteins100g} g",
+                                    text = "Proteins: ${item!!.proteins} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Salt: ${item!!.salt100g} g",
+                                    text = "Salt: ${item!!.salt} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Saturated Fat: ${item!!.saturatedFat100g} g",
+                                    text = "Saturated Fat: ${item!!.saturated_fat} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Sodium: ${item!!.sodium100g} g",
+                                    text = "Sodium: ${item!!.sodium} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                                 Text(
-                                    text = "Sugars: ${item!!.sugars100g} g",
+                                    text = "Sugars: ${item!!.sugar} g",
                                     style = MaterialTheme.typography.bodyLarge
                                 )
                             }

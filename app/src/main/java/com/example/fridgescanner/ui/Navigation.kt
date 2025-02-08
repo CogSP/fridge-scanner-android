@@ -1,6 +1,8 @@
 package com.example.fridgescanner.ui
 
-import ScanScreen
+
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -22,10 +24,12 @@ import com.example.fridgescanner.ui.login.LoginScreen
 import com.example.fridgescanner.ui.login.RegisterScreen
 import com.example.fridgescanner.ui.notification.NotificationsScreen
 import com.example.fridgescanner.ui.options.OptionsScreen
+import com.example.fridgescanner.ui.scanitems.ScanScreen
 import com.example.fridgescanner.ui.shoppinglist.ShoppingListScreen
 import com.example.fridgescanner.viewmodel.FridgeViewModel
 import com.example.fridgescanner.viewmodel.FridgeViewModelFactory
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Navigation(fridgeViewModel: FridgeViewModel) {
 
