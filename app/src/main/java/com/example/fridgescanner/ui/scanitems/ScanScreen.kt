@@ -50,6 +50,10 @@ fun ScanScreen(navController: NavController, viewModel: FridgeViewModel) {
         )
     }
 
+    // Get the current fridge ID from your ViewModel.
+    val currentFridgeId by viewModel.currentFridgeId.collectAsState()
+
+
     // Bottom navigation state.
     var selectedBottomNav by remember { mutableStateOf(0) }
     val bottomNavItems = listOf("Home", "Scan New Item", "Fridge", "Settings")
@@ -117,15 +121,15 @@ fun ScanScreen(navController: NavController, viewModel: FridgeViewModel) {
 
                     OutlinedButton(
                         onClick = {
-                            // Ensure an expiration date is selected before scanning.
-                            if (selectedExpiryDate.isEmpty()) {
-                                ToastHelper.showToast(
-                                    context,
-                                    "Please select an expiration date first."
-                                )
+                            // First check if a fridge is selected.
+                            if (currentFridgeId.isNullOrEmpty()) {
+                                ToastHelper.showToast(context, "Please choose a fridge first.")
+                                // Optionally, navigate to the Manage Fridges screen:
+                                navController.navigate(Screen.ManageFridgesScreen.route)
+                            } else if (selectedExpiryDate.isEmpty()) {
+                                ToastHelper.showToast(context, "Please select an expiration date first.")
                             } else {
-                                // Navigate to your barcode scanner screen.
-                                // In your barcode scanner logic, make sure to pass along the selected expiry date.
+                                // If both conditions are met, navigate to the BarcodeScannerScreen.
                                 navController.navigate(Screen.BarcodeScannerScreen.route)
                             }
                         },

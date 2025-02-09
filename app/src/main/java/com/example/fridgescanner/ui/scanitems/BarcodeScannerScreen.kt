@@ -254,34 +254,30 @@ private fun processImageProxy(
         barcodeScanner.process(image)
             .addOnSuccessListener { barcodes ->
 
+                Log.d("BarcodeScanner", "Barcodes PORCACCIO DIOOOOOOOOO: $barcodes")
                 val firstBarcode = barcodes.firstOrNull()
+                Log.d("BarcodeScanner", "First barcode: $firstBarcode")
 
                 if (firstBarcode != null) {
+                    Log.d("BarcodeScanner", "First barcode type: ${firstBarcode.valueType}")
                     // increase by 1
                     hasNavigatedState.value += 1
+//                    val barcodeValue = when (firstBarcode.valueType) {
+//                        Barcode.TYPE_TEXT -> firstBarcode.displayValue
+//                        else -> null
+//                    }
                     val barcodeValue = when (firstBarcode.valueType) {
-                        Barcode.TYPE_TEXT -> firstBarcode.displayValue
+                        Barcode.TYPE_TEXT, Barcode.TYPE_PRODUCT -> firstBarcode.displayValue
                         else -> null
                     }
+                    Log.d("BarcodeScanner", "BARCODE VALUE DIO MAIALONEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE: $barcodeValue")
                     barcodeValue?.let { value ->
+
                         val context = previewView.context
 
+                        Log.d("BarcodeScanner", "PROVAPROVAPROVA BARCODE VALUE TROIA LA MADONNNAAAAAQAQAAAA: $value")
                         if (hasNavigatedState.value == 1) {
-//                            fetchProductInfo(
-//                                barcodeValue = value,
-//                                onSuccess = { message ->
-//                                    ToastHelper.showToast(context, message)
-//                                    // Ensure navigation happens on the main thread
-//                                    Handler(Looper.getMainLooper()).post {
-//                                        onBack()
-//                                    }
-//                                },
-//                                onFailure = { errorMsg ->
-//                                    ToastHelper.showToast(context, errorMsg)
-//                                },
-//                                viewModel = viewModel,
-//                                context = context
-//                            )
+                            Log.d("BarcodeScanner", "Barcode value TROIA LA MADONNNAAAAAQAQAAAA: $value")
                             barcodeValue?.let { value ->
                                 if (hasNavigatedState.value == 1) {
                                     // Launch a coroutine on the main thread.
@@ -384,6 +380,7 @@ suspend fun fetchProductInfoRetrofit(
 ): ProductResponse? {
     return try {
         // Call your PythonAnywhere endpoint via Retrofit.
+        Log.d("Retrofit", "Fetching product info for barcode: $barcodeValue, fridgeId: $fridgeId, expiryDate: $expiryDate")
         val response: Response<ProductResponse> = ApiClient.fridgeApiService.getProduct(
             ProductRequest(id = barcodeValue, fridge_id = fridgeId, expiry_date = expiryDate)
         )

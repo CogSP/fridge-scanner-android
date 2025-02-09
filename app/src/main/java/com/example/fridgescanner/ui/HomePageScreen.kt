@@ -117,7 +117,8 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
                 totalItems = allItems.size,
                 expiredCount = expiredItems.size,
                 expiringSoonCount = expiringSoonItems.size,
-                navController = navController
+                navController = navController,
+                viewModel = viewModel
             )
 
             Spacer(Modifier.height(16.dp))
@@ -154,8 +155,13 @@ fun ItemsStatusCard(
     totalItems: Int,
     expiredCount: Int,
     expiringSoonCount: Int,
-    navController: NavController
+    navController: NavController,
+    viewModel: FridgeViewModel
 ) {
+
+    // Read the current fridge id from the ViewModel.
+    val currentFridgeId by viewModel.currentFridgeId.collectAsState()
+
     Card(
         shape = RoundedCornerShape(12.dp),
         modifier = Modifier.fillMaxWidth()
@@ -177,37 +183,52 @@ fun ItemsStatusCard(
             )
             Spacer(Modifier.height(8.dp))
 
-            // Show total items
-            Text(
-                text = "Total items: $totalItems",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = MaterialTheme.colorScheme.onSurface,
-                    fontWeight = FontWeight.Medium
+            if (currentFridgeId.isNullOrEmpty() || totalItems == 0) {
+                // If no fridge is selected or there are no items, show an instruction.
+                Text(
+                    text = "Choose a Fridge to check its product",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center
                 )
-            )
-
-            // Show expired / expiring soon info
-            Text(
-                text = "Expired: $expiredCount",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color.Red,
-                    fontWeight = FontWeight.Medium
+            } else {
+                // Show total items
+                Text(
+                    text = "Total items: $totalItems",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontWeight = FontWeight.Medium
+                    )
                 )
-            )
 
-            Text(
-                text = "Expiring Soon: $expiringSoonCount",
-                style = MaterialTheme.typography.bodyMedium.copy(
-                    color = Color(0xFFFF9800),
-                    fontWeight = FontWeight.Medium
+                // Show expired / expiring soon info
+                Text(
+                    text = "Expired: $expiredCount",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = Color.Red,
+                        fontWeight = FontWeight.Medium
+                    )
                 )
-            )
 
+                Text(
+                    text = "Expiring Soon: $expiringSoonCount",
+                    style = MaterialTheme.typography.bodyMedium.copy(
+                        color = Color(0xFFFF9800),
+                        fontWeight = FontWeight.Medium
+                    )
+                )
+            }
             Spacer(Modifier.height(8.dp))
 
             // Example 'Manage Items' button
             OutlinedButton(
-                onClick = { navController.navigate(Screen.FridgeScreen.route) },
+                onClick = {
+                    if (currentFridgeId.isNullOrEmpty()) {
+                    // If no fridge is selected, navigate to the ManageFridgesScreen.
+                    navController.navigate(Screen.ManageFridgesScreen.route)
+                } else {
+                    // Otherwise, navigate to the FridgeScreen (with a default filter, e.g. "All")
+                    navController.navigate(Screen.FridgeScreen.withArgs("All"))
+                } },
                 colors = ButtonDefaults.outlinedButtonColors(
                     contentColor = MaterialTheme.colorScheme.onSurface
                 ),
