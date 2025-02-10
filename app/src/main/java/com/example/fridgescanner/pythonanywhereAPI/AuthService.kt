@@ -32,10 +32,39 @@ data class User(
     val token: String?
 )
 
+data class ForgotPasswordResponse(
+    val success: Boolean,
+    val message: String?
+)
+
+
+data class ResetPasswordRequest(
+    val email: String,
+    val reset_code: String,
+    val new_password: String,
+)
+
+
+data class ResetPasswordResponse(
+    val success: Boolean,
+    val message: String?
+)
+
+
+
+
 interface AuthService {
     @POST("api/user/login")
     suspend fun loginUser(@Body request: LoginRequest): Response<LoginResponse>
 
     @POST("api/user/create")
     suspend fun registerUser(@Body request: RegisterRequest): Response<RegisterResponse>
+
+    @POST("api/user/forgot")
+    suspend fun forgotPassword(@Body request: Map<String, String>): Response<ForgotPasswordResponse>
+
+    @POST("api/user/reset")
+    suspend fun resetPassword(
+        @Body request: ResetPasswordRequest
+    ): Response<ResetPasswordResponse>
 }

@@ -1,6 +1,7 @@
 package com.example.fridgescanner.ui
 
 
+import ResetPasswordScreen
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
@@ -35,10 +36,6 @@ fun Navigation(fridgeViewModel: FridgeViewModel) {
 
     val navController = rememberNavController()
 
-//    val repository = remember { FridgeRepository() }
-//    val viewModelFactory = remember { FridgeViewModelFactory(repository) }
-//    val fridgeViewModel: FridgeViewModel = viewModel(factory = viewModelFactory)
-
     NavHost(navController, startDestination = Screen.LoginScreen.route) {
         composable(route = Screen.LoginScreen.route) {
             LoginScreen(navController = navController, viewModel = fridgeViewModel)
@@ -46,6 +43,22 @@ fun Navigation(fridgeViewModel: FridgeViewModel) {
         composable(Screen.ForgotPasswordScreen.route) {
             ForgotPasswordScreen(navController, fridgeViewModel)
         }
+//        composable(Screen.ResetPasswordScreen.route) {
+//            ResetPasswordScreen(navController, fridgeViewModel)
+//        }
+        composable(
+            route = Screen.ResetPasswordScreen.route + "/{email}",
+            arguments = listOf(
+                navArgument("email") {
+                    type = NavType.StringType
+                    defaultValue = ""
+                    nullable = true
+                }
+            )
+        ) { entry ->
+            ResetPasswordScreen(navController = navController, viewModel = fridgeViewModel, email = entry.arguments?.getString("email") ?: "")
+        }
+
         composable(Screen.RegisterScreen.route) {
             RegisterScreen(navController, fridgeViewModel)
         }
@@ -81,19 +94,6 @@ fun Navigation(fridgeViewModel: FridgeViewModel) {
                 initialFilter = filter
             )
         }
-
-        // Preserve the original route without parameters if needed
-        // Actually I don't think this is needed
-//        composable(
-//            route = Screen.FridgeScreen.route
-//        ) {
-//            FridgeScreen(
-//                navController = navController,
-//                viewModel = fridgeViewModel
-//                // default initialFilter will be used here
-//            )
-//        }
-
         composable(
             route = Screen.FridgeItemDetailScreen.route + "/{id}",
             arguments = listOf(

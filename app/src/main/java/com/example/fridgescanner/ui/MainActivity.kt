@@ -36,7 +36,8 @@ class MainActivity : ComponentActivity() {
             val repository = FridgeRepository()
             // Create an instance of AuthService from your ApiClient (adjust this if your ApiClient is set up differently)
             val authService = ApiClient.authService
-            val viewModelFactory = FridgeViewModelFactory(repository, authService)
+            val fridgeApiService = ApiClient.fridgeApiService
+            val viewModelFactory = FridgeViewModelFactory(repository, authService, fridgeApiService)
             val fridgeViewModel: FridgeViewModel = viewModel(factory = viewModelFactory)
 
             // 2) Observe dark mode from the ViewModel

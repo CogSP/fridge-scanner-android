@@ -200,20 +200,20 @@ fun ShoppingListScreen(
                             )
                         }
                         IconButton(onClick = {
-                            viewModel.addOrIncrementShoppingItem("Breakfast")
+                            viewModel.addOrIncrementShoppingItem("Pancakes")
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.BreakfastDining,
-                                contentDescription = "Breakfast",
+                                contentDescription = "Pancakes",
                                 tint = Color.Unspecified
                             )
                         }
                         IconButton(onClick = {
-                            viewModel.addOrIncrementShoppingItem("Fast Food")
+                            viewModel.addOrIncrementShoppingItem("Burger")
                         }) {
                             Icon(
                                 imageVector = Icons.Filled.Fastfood,
-                                contentDescription = "Fast Food",
+                                contentDescription = "Burger",
                                 tint = Color.Unspecified
                             )
                         }

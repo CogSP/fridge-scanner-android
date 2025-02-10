@@ -18,6 +18,7 @@ import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Path
+import retrofit2.http.Query
 
 
 // For example, in FridgeApiService.kt or in a separate file
@@ -31,6 +32,30 @@ data class FridgeUserResponse(
     val message: String,
     val fridges: List<Fridge>?
 )
+
+data class ShareFridgeRequest(
+    val email: String,
+    val fridge_id: String,
+    val username: String
+)
+
+data class ShareFridgeResponse(
+    val success: Boolean,
+    val message: String?
+)
+
+
+data class FridgeMembersResponse(
+    val success: Boolean,
+    val members: List<String>  // List of user emails (or more complex objects, if needed)
+)
+
+data class FridgeOwnerResponse(
+    val success: Boolean,
+    val owner_email: String?,
+    val owner_name: String?
+)
+
 
 interface FridgeApiService {
 
@@ -66,4 +91,20 @@ interface FridgeApiService {
     suspend fun removeFridgeItem(
         @Body request: FridgeItemRemoveRequest
     ): Response<GenericResponse>
+
+    @POST("api/fridge/share")
+    suspend fun shareFridge(
+        @Body request: ShareFridgeRequest
+    ): Response<ShareFridgeResponse>
+
+    @GET("api/fridge/members")
+    suspend fun getFridgeMembers(
+        @Query("fridge_id") fridgeId: String
+    ): Response<FridgeMembersResponse>
+
+    @GET("api/fridge/owner")
+    suspend fun getFridgeOwner(
+        @Query("fridge_id") fridgeId: String
+    ): Response<FridgeOwnerResponse>
+
 }

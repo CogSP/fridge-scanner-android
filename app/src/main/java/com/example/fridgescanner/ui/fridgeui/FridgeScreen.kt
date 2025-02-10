@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.*
@@ -71,7 +72,12 @@ fun FridgeScreen(
 
     // State to control the "Change Fridge" confirmation dialog.
     var showChangeFridgeDialog by remember { mutableStateOf(false) }
-
+    // State to control the "Share Fridge" popup.
+    var showSharePopup by remember { mutableStateOf(false) }
+    // State for the email input in the share popup.
+    var shareEmail by remember { mutableStateOf("") }
+    // State for the list of already shared users.
+    val sharedUsers by viewModel.sharedUsers.collectAsState()
 
     // Separate items into categories
     val expiredItems = allItems.filter { it.isExpired() }
@@ -112,7 +118,7 @@ fun FridgeScreen(
     val finalItems = remember(filteredItems, selectedOrderOption) {
         when (selectedOrderOption) {
             "Alphabetically" -> filteredItems.sortedBy { it.name.lowercase() }
-            "By Expiration Date" -> filteredItems.sortedBy { parseDate(it.expiry_date) }
+            "By Expiration Date" -> filteredItems.sortedBy { it.expiry_date }
             else -> filteredItems
         }
     }
@@ -143,7 +149,11 @@ fun FridgeScreen(
             FridgeHeader(
                 title = if (multiSelectMode) "Select Items" else "Your Fridge Items",
                 itemCount = finalItems.size,
-                onChangeFridgeClicked = { showChangeFridgeDialog = true }
+                onChangeFridgeClicked = { showChangeFridgeDialog = true },
+                onShareClicked = {
+                    viewModel.fetchFridgeMembers(currentFridgeId!!)
+                    showSharePopup = true
+                }
             )
 
             Spacer(modifier = Modifier.height(40.dp))
@@ -232,6 +242,7 @@ fun FridgeScreen(
                 isLoading -> {
                     CircularProgressIndicator(Modifier.padding(top = 32.dp))
                 }
+
                 errorMessage != null -> {
                     Text(
                         text = errorMessage.orEmpty(),
@@ -243,6 +254,7 @@ fun FridgeScreen(
                             .fillMaxWidth()
                     )
                 }
+
                 finalItems.isEmpty() -> {
                     Text(
                         text = "No items found.",
@@ -251,6 +263,7 @@ fun FridgeScreen(
                         textAlign = TextAlign.Center
                     )
                 }
+
                 else -> {
                     // Main list of items
                     LazyColumn(
@@ -336,6 +349,106 @@ fun FridgeScreen(
             }
         )
     }
+
+
+    // Then, in your AlertDialog for sharing:
+    if (showSharePopup) {
+        // Assume the owner’s email is available via viewModel.ownerEmail (or another property)
+        val ownerEmail by viewModel.ownerEmail.collectAsState(initial = "owner@example.com")
+        val ownerName by viewModel.ownerName.collectAsState(initial = "Owner Name")
+
+        AlertDialog(
+            onDismissRequest = { showSharePopup = false },
+            title = { Text("Share Fridge") },
+            text = {
+                Column {
+                    OutlinedTextField(
+                        value = shareEmail,
+                        onValueChange = { shareEmail = it },
+                        label = { Text("Enter user's email") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Fridge access details:", style = MaterialTheme.typography.titleMedium)
+                    Column(modifier = Modifier.padding(8.dp)) {
+                        Text(
+                            text = "Owner Name",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        ownerName?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Owner Email",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                        ownerEmail?.let {
+                            Text(
+                                text = it,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text("Also shared with:", style = MaterialTheme.typography.titleMedium)
+                    if (sharedUsers.isEmpty()) {
+                        Text("No additional users.", style = MaterialTheme.typography.bodySmall)
+                    } else {
+                        LazyColumn {
+                            items(sharedUsers) { userEmail ->
+                                Text(text = userEmail, style = MaterialTheme.typography.bodySmall)
+                            }
+                        }
+                    }
+                }
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        if (shareEmail.isNotBlank()) {
+                            val fridgeId = viewModel.currentFridgeId.value
+                            if (fridgeId != null) {
+                                viewModel.shareFridge(
+                                    shareEmail,
+                                    fridgeId
+                                ) { success, responseMessage ->
+                                    if (success) {
+                                        // After a successful share, refresh the list from the backend.
+                                        viewModel.fetchFridgeMembers(fridgeId)
+                                        shareEmail = ""
+                                        showSharePopup = false
+                                    } else {
+                                        Log.e(
+                                            "FridgeScreen",
+                                            "Error sharing fridge: $responseMessage"
+                                        )
+                                    }
+                                }
+                            } else {
+                                Log.e("FridgeScreen", "No fridge selected.")
+                            }
+                        }
+                    }
+                ) {
+                    Text("Share")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showSharePopup = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -351,7 +464,8 @@ fun parseDate(dateStr: String): LocalDate? {
 fun FridgeHeader(
     title: String,
     itemCount: Int,
-    onChangeFridgeClicked: () -> Unit
+    onChangeFridgeClicked: () -> Unit,
+    onShareClicked: () -> Unit
 ) {
     Card(
         colors = CardDefaults.cardColors(
@@ -377,14 +491,14 @@ fun FridgeHeader(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
-
-            // Add a button to let the user change the fridge.
-//            IconButton(onClick = { onChangeFridgeClicked() }) {
-//                Icon(
-//                    imageVector = Icons.Default.Edit,  // Use an appropriate icon
-//                    contentDescription = "Change Fridge"
-//                )
-//            }
+            // "Share Fridge" plus button.
+            IconButton(onClick = onShareClicked) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = "Share Fridge",
+                    modifier = Modifier.size(36.dp)
+                )
+            }
             // Use your fridge icon instead of the edit icon.
             IconButton(onClick = { onChangeFridgeClicked() }) {
                 Icon(

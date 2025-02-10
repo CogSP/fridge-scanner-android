@@ -26,6 +26,7 @@ import androidx.compose.runtime.Composable
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.example.fridgescanner.Screen
+import com.example.fridgescanner.data.ShoppingItem
 import com.example.fridgescanner.viewmodel.FridgeViewModel
 import java.time.LocalTime
 
@@ -56,9 +57,9 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
     val userName = name
     val services = listOf(
         ServiceItem("Shopping List", Icons.Default.ShoppingCart),
-        ServiceItem("Account", Icons.Default.Person),
         ServiceItem("Scan Item", Icons.Default.CameraAlt),
-        ServiceItem("Expired Items", Icons.Default.MoodBad)
+        ServiceItem("Expired Items", Icons.Default.MoodBad),
+        ServiceItem("Logout", Icons.Default.ExitToApp)
     )
     val recentTransactions = listOf(
         TransactionItem("Eggs", "Today, 10:45pm", "x2", Icons.Default.Egg),
@@ -77,16 +78,16 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
                 title = {
                     GreetingText(userName = userName)
                 },
-                actions = {
-                    IconButton(onClick = {
-                        navController.navigate(Screen.NotificationsScreen.route)
-                    }) {
-                        Icon(
-                            imageVector = Icons.Default.Notifications,
-                            contentDescription = "Notifications"
-                        )
-                    }
-                }
+//                actions = {
+//                    IconButton(onClick = {
+//                        navController.navigate(Screen.NotificationsScreen.route)
+//                    }) {
+//                        Icon(
+//                            imageVector = Icons.Default.Notifications,
+//                            contentDescription = "Notifications"
+//                        )
+//                    }
+//                }
             )
         },
         bottomBar = {
@@ -124,7 +125,7 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
             Spacer(Modifier.height(16.dp))
 
             // Services row
-            ServicesRow(services, navController)
+            ServicesRow(services, navController, viewModel)
 
             Spacer(Modifier.height(16.dp))
 
@@ -133,22 +134,48 @@ fun HomePageScreen(name: String?, navController: NavController, viewModel: Fridg
 
             Spacer(Modifier.height(16.dp))
 
-            // Recent transactions
+            // -------------------------------
+            // Shopping List Section
+            // -------------------------------
             Text(
-                text = "Recent Activities",
+                text = "Shopping List",
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 modifier = Modifier.padding(vertical = 8.dp)
             )
-            Column {
-                recentTransactions.forEach {
-                    TransactionRow(it)
+
+            // Collect the shopping list from your ViewModel
+            val shoppingList by viewModel.shoppingList.collectAsState()
+
+            if (shoppingList.isNotEmpty()) {
+                // You can use a Column (or LazyColumn if the list might be long)
+                Column {
+                    shoppingList.forEach { item ->
+                        ShoppingListRow(item = item, onRemove = { itemName ->
+                            viewModel.deleteItemFromShoppingList(itemName)
+                        })
+                    }
                 }
+            } else {
+                Text(
+                    text = "No items in your shopping list.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
             }
         }
     }
 }
 
+fun getShoppingItemIcon(itemName: String): ImageVector {
+    return when (itemName.lowercase()) {
+        "milk" -> Icons.Default.LocalDrink
+        "eggs" -> Icons.Default.Egg
+        "pancakes" -> Icons.Default.BreakfastDining
+        "burger" -> Icons.Default.Fastfood
+        // Add more mappings as needed
+        else -> Icons.Default.ShoppingCart // default icon
+    }
+}
 
 @Composable
 fun ItemsStatusCard(
@@ -158,6 +185,7 @@ fun ItemsStatusCard(
     navController: NavController,
     viewModel: FridgeViewModel
 ) {
+
 
     // Read the current fridge id from the ViewModel.
     val currentFridgeId by viewModel.currentFridgeId.collectAsState()
@@ -245,8 +273,46 @@ fun ItemsStatusCard(
 // Services Row
 //---------------------------------------
 @Composable
-fun ServicesRow(services: List<ServiceItem>, navController: NavController) {
+fun ServicesRow(services: List<ServiceItem>, navController: NavController, viewModel: FridgeViewModel) {
     // Horizontal row of icons/text
+
+    // State to control whether the logout confirmation dialog is shown.
+    var showLogoutDialog by remember { mutableStateOf(false) }
+
+    // If the dialog should be shown, display the AlertDialog.
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                // Dismiss the dialog if the user clicks outside of it or presses the back button.
+                showLogoutDialog = false
+            },
+            title = { Text(text = "Confirm Logout") },
+            text = { Text("Are you sure you want to log out?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    // When the user confirms, perform the logout:
+                    viewModel.logout()
+                    showLogoutDialog = false
+                    navController.navigate(Screen.LoginScreen.route) {
+                        // Clear the back stack to prevent navigating back to the logged-in screens.
+                        popUpTo(0)
+                    }
+                }) {
+                    Text("Logout")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = {
+                    // If the user cancels, simply dismiss the dialog.
+                    showLogoutDialog = false
+                }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
@@ -271,8 +337,8 @@ fun ServicesRow(services: List<ServiceItem>, navController: NavController) {
                         if (service.name == "Scan Item") {
                             navController.navigate(Screen.BarcodeScannerScreen.route)
                         }
-                        if (service.name == "Account") {
-                            navController.navigate(Screen.AccountScreen.route)
+                        if (service.name == "Logout") {
+                            showLogoutDialog = true
                         }
                         if (service.name == "Expired Items") {
                             navController.navigate(Screen.FridgeScreen.route + "/Expired")
@@ -281,7 +347,7 @@ fun ServicesRow(services: List<ServiceItem>, navController: NavController) {
                         Icon(
                             imageVector = service.icon,
                             contentDescription = service.name,
-                            tint = Color(0xFF9C27B0),
+                            tint = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.size(24.dp)
                         )
                     }
@@ -373,6 +439,41 @@ fun TransactionRow(item: TransactionItem) {
             color = Color.Red,
             style = MaterialTheme.typography.bodyMedium
         )
+    }
+}
+
+//---------------------------------------
+// Shopping List Row
+//---------------------------------------
+@Composable
+fun ShoppingListRow(item: ShoppingItem, onRemove: (String) -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 6.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = getShoppingItemIcon(item.name),
+                contentDescription = item.name,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(32.dp)
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = if (item.quantity > 1) "${item.name} (${item.quantity})" else item.name,
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+        IconButton(onClick = { onRemove(item.name) }) {
+            Icon(
+                imageVector = Icons.Default.Delete,
+                contentDescription = "Remove ${item.name}",
+                tint = Color.Red
+            )
+        }
     }
 }
 

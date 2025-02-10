@@ -36,16 +36,10 @@ fun AccountScreen(navController: NavController, viewModel: FridgeViewModel) {
                 .padding(16.dp)
         ) {
             Text(
-                text = "Account Details",
+                text = "${viewModel.name}'s Account",
                 style = MaterialTheme.typography.headlineMedium
             )
             Spacer(modifier = Modifier.height(16.dp))
-
-            // Display user's name from ViewModel (add more fields as needed)
-            Text(
-                text = "Name: ${viewModel.name}",
-                style = MaterialTheme.typography.bodyLarge
-            )
 
             // This spacer pushes the Logout button to the bottom of the screen.
             Spacer(modifier = Modifier.weight(1f))

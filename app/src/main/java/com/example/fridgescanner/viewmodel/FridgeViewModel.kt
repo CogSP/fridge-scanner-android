@@ -11,6 +11,7 @@ import com.example.fridgescanner.data.FridgeRepository
 import com.example.fridgescanner.data.ShoppingItem
 import com.example.fridgescanner.pythonanywhereAPI.ApiClient
 import com.example.fridgescanner.pythonanywhereAPI.AuthService
+import com.example.fridgescanner.pythonanywhereAPI.FridgeApiService
 import com.example.fridgescanner.pythonanywhereAPI.FridgeUserRequest
 import com.example.fridgescanner.pythonanywhereAPI.LoginRequest
 import com.example.fridgescanner.pythonanywhereAPI.RegisterRequest
@@ -25,11 +26,26 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-class FridgeViewModel(private val repository: FridgeRepository, private val authService: AuthService) : ViewModel() {
+class FridgeViewModel(
+    private val repository: FridgeRepository,
+    private val authService: AuthService,
+    private val fridgeApiService: FridgeApiService
+) : ViewModel() {
 
     private val _darkModeEnabled = MutableStateFlow(false)
     val darkModeEnabled: StateFlow<Boolean> = _darkModeEnabled
 
+    private val _ownerEmail = MutableStateFlow<String?>(null)
+    val ownerEmail: StateFlow<String?> = _ownerEmail.asStateFlow()
+
+
+    private val _ownerName = MutableStateFlow<String?>(null)
+    val ownerName: StateFlow<String?> = _ownerName.asStateFlow()
+
+
+    // Add a state to hold the list of shared users (as email strings).
+    private val _sharedUsers = MutableStateFlow<List<String>>(emptyList())
+    val sharedUsers: StateFlow<List<String>> = _sharedUsers.asStateFlow()
 
     // In your ViewModel (FridgeViewModel):
     private val _selectedExpiryDate = MutableStateFlow("")
@@ -45,6 +61,7 @@ class FridgeViewModel(private val repository: FridgeRepository, private val auth
 
     fun setCurrentFridgeId(id: String) {
         _currentFridgeId.value = id
+        fetchOwnerEmail(id)
     }
 
     fun clearCurrentFridgeId() {
@@ -259,6 +276,51 @@ class FridgeViewModel(private val repository: FridgeRepository, private val auth
         }
     }
 
+    fun forgotPassword(emailOrUsername: String, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val request = mapOf("email" to emailOrUsername)
+                val response = authService.forgotPassword(request)
+                if (response.isSuccessful) {
+                    onResult(true, response.body()?.message)
+                } else {
+                    onResult(false, "Error: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                onResult(false, e.localizedMessage)
+            }
+        }
+    }
+
+    fun resetPassword(
+        email: String,
+        resetCode: String,
+        newPassword: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                // Create an instance of the ResetPasswordRequest.
+                val request = com.example.fridgescanner.pythonanywhereAPI.ResetPasswordRequest(
+                    email = email,
+                    reset_code = resetCode,
+                    new_password = newPassword
+                )
+                // Call the API with the typed request.
+                val response = authService.resetPassword(request)
+                if (response.isSuccessful) {
+                    // Assuming your API returns a ResetPasswordResponse object.
+                    onResult(true, response.body()?.message)
+                } else {
+                    onResult(false, "Error: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                onResult(false, e.localizedMessage)
+            }
+        }
+    }
+
+
 
 
 
@@ -290,6 +352,34 @@ class FridgeViewModel(private val repository: FridgeRepository, private val auth
             }
         }
     }
+
+    fun shareFridge(
+        email: String,
+        fridgeId: String,
+        onResult: (Boolean, String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                // Create an instance of ShareFridgeRequest.
+                val request = com.example.fridgescanner.pythonanywhereAPI.ShareFridgeRequest(
+                    email = email,
+                    fridge_id = fridgeId,
+                    username = name
+                )
+                // Call the API endpoint.
+                val response = fridgeApiService.shareFridge(request)
+                if (response.isSuccessful) {
+                    // Assuming your API returns a ShareFridgeResponse.
+                    onResult(true, response.body()?.message)
+                } else {
+                    onResult(false, "Error: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                onResult(false, e.localizedMessage)
+            }
+        }
+    }
+
 
     fun loginUser(username: String, password: String, callback: (Boolean, String?) -> Unit) {
         viewModelScope.launch {
@@ -357,4 +447,41 @@ class FridgeViewModel(private val repository: FridgeRepository, private val auth
             _shoppingList.value = items
         }
     }
+
+    // Function to fetch the fridge members from your PythonAnywhere backend.
+    fun fetchFridgeMembers(fridgeId: String) {
+        viewModelScope.launch {
+            try {
+                val response = fridgeApiService.getFridgeMembers(fridgeId)
+                if (response.isSuccessful) {
+                    // Assuming your API returns a FridgeMembersResponse with a 'members' list.
+                    val members = response.body()?.members ?: emptyList()
+                    _sharedUsers.value = members
+                } else {
+                    Log.e("FridgeViewModel", "Error fetching fridge members: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("FridgeViewModel", "Exception fetching fridge members: ${e.localizedMessage}")
+            }
+        }
+    }
+
+    fun fetchOwnerEmail(fridgeId: String) {
+        viewModelScope.launch {
+            try {
+                // Assuming your FridgeApiService has a function getFridgeOwner that takes a fridgeId.
+                val response = fridgeApiService.getFridgeOwner(fridgeId)
+                if (response.isSuccessful) {
+                    // Assuming the response body contains a field 'owner_email'
+                    _ownerName.value = response.body()?.owner_name
+                    _ownerEmail.value = response.body()?.owner_email
+                } else {
+                    Log.e("FridgeViewModel", "Error fetching owner email: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                Log.e("FridgeViewModel", "Exception fetching owner email: ${e.localizedMessage}")
+            }
+        }
+    }
+
 }
