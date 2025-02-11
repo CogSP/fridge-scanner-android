@@ -484,4 +484,27 @@ class FridgeViewModel(
         }
     }
 
+
+    fun deleteFridges(fridgeIds: List<String>, onResult: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                // Create a request object with the list of fridge IDs.
+                val request = com.example.fridgescanner.pythonanywhereAPI.DeleteFridgesRequest(fridge_ids = fridgeIds)
+                // Call the API endpoint.
+                val response = fridgeApiService.deleteFridges(request)
+                if (response.isSuccessful) {
+                    // On success, call the callback and refresh the list of fridges.
+                    onResult(true, response.body()?.message)
+                    fetchFridgesForUser()
+                } else {
+                    onResult(false, "Error: ${response.code()}")
+                }
+            } catch (e: Exception) {
+                onResult(false, e.localizedMessage)
+            }
+        }
+    }
+
+
+
 }

@@ -4,10 +4,12 @@ package com.example.fridgescanner.ui.fridgeui
 import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -32,15 +34,19 @@ import com.example.fridgescanner.R
 import com.example.fridgescanner.Screen
 import com.example.fridgescanner.viewmodel.FridgeViewModel
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun ManageFridgesScreen(navController: NavController, viewModel: FridgeViewModel) {
     // Observe the list of fridges from the view model.
     val fridges by viewModel.fridges.collectAsState()
     var showCreateForm by remember { mutableStateOf(false) }
     var fridgeName by remember { mutableStateOf("") }
-    var fridgeColor by remember { mutableStateOf("") } // Hex string, e.g., "#FF0000"
+    var fridgeColor by remember { mutableStateOf("") } // Hex string, e.g
     val context = LocalContext.current
+
+    // Multi-select state for deletion.
+    var multiSelectMode by remember { mutableStateOf(false) }
+    val selectedFridgeIds = remember { mutableStateListOf<String>() }
 
     // Fetch fridges when the screen is first displayed.
     LaunchedEffect(Unit) {
@@ -49,7 +55,6 @@ fun ManageFridgesScreen(navController: NavController, viewModel: FridgeViewModel
         Log.d("ManageFridgesScreen", "Fetched fridges")
     }
 
-    // Wrap the entire screen in a Scaffold that provides a TopAppBar with a Back arrow.
     Scaffold(
         topBar = {
             TopAppBar(
@@ -75,31 +80,19 @@ fun ManageFridgesScreen(navController: NavController, viewModel: FridgeViewModel
         ) {
             Column(
                 modifier = Modifier
-                    .align(Alignment.Center) // Centers the entire Column vertically.
+                    .align(Alignment.Center)
                     .fillMaxWidth(),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
                 Spacer(modifier = Modifier.height(24.dp))
-
                 if (fridges.isNotEmpty()) {
-                    // Wrap the grid in BoxWithConstraints to get available maxWidth.
                     BoxWithConstraints(modifier = Modifier.fillMaxWidth()) {
-                        // Define spacing and desired minimum cell width.
                         val spacing: Dp = 12.dp
                         val minCellWidth: Dp = 150.dp
-                        // Calculate the number of columns that can fit.
-                        val colCount = maxOf(
-                            ((maxWidth + spacing) / (minCellWidth + spacing)).toInt(),
-                            1
-                        )
-                        // Compute the width for each card.
+                        val colCount = maxOf(((maxWidth + spacing) / (minCellWidth + spacing)).toInt(), 1)
                         val cardWidth = (maxWidth - spacing * (colCount + 2)) / colCount
-
-                        // Group the fridges into rows (each row will have up to colCount items).
                         val rows = fridges.chunked(colCount)
 
-                        // Use LazyColumn to list each row.
                         LazyColumn(
                             modifier = Modifier.fillMaxWidth(),
                             verticalArrangement = Arrangement.spacedBy(spacing),
@@ -108,39 +101,62 @@ fun ManageFridgesScreen(navController: NavController, viewModel: FridgeViewModel
                             items(rows) { row ->
                                 Row(
                                     modifier = Modifier.fillMaxWidth(),
-                                    // Center the items in the row and space them by our defined spacing.
-                                    horizontalArrangement = Arrangement.spacedBy(
-                                        spacing,
-                                        Alignment.CenterHorizontally
-                                    )
+                                    horizontalArrangement = Arrangement.spacedBy(spacing, Alignment.CenterHorizontally)
                                 ) {
                                     row.forEach { fridge ->
-                                        // Wrap each card in a Box with a fixed width.
-                                        Box(modifier = Modifier.width(cardWidth)) {
+                                        // Use combinedClickable to handle onClick and onLongClick.
+                                        Box(
+                                            modifier = Modifier
+                                                .width(cardWidth)
+                                                .combinedClickable(
+                                                    onClick = {
+                                                        if (multiSelectMode) {
+                                                            // Toggle selection
+                                                            val fridgeId = fridge.id.toString()
+                                                            if (selectedFridgeIds.contains(fridgeId)) {
+                                                                selectedFridgeIds.remove(fridgeId)
+                                                            } else {
+                                                                selectedFridgeIds.add(fridgeId)
+                                                            }
+                                                            // If no fridge is selected, exit multi-select mode
+                                                            if (selectedFridgeIds.isEmpty()) {
+                                                                multiSelectMode = false
+                                                            }
+                                                        } else {
+                                                            // Normal behavior: navigate to fridge screen.
+                                                            viewModel.setCurrentFridgeId(fridge.id.toString())
+                                                            navController.navigate(
+                                                                Screen.FridgeScreen.withArgs("All")
+                                                            )
+                                                        }
+                                                    },
+                                                    onLongClick = {
+                                                        // Enter multi-select mode if not already active.
+                                                        if (!multiSelectMode) {
+                                                            multiSelectMode = true
+                                                            selectedFridgeIds.add(fridge.id.toString())
+                                                        }
+                                                    }
+                                                )
+                                        ) {
                                             Card(
                                                 modifier = Modifier
-                                                    .fillMaxWidth() // Fills the width of the Box.
+                                                    .fillMaxWidth()
                                                     .aspectRatio(1f)
-                                                    .clickable {
-                                                        viewModel.setCurrentFridgeId(fridge.id.toString())
-                                                        // Navigate to the FridgeScreen.
-                                                        // Here we pass a default filter ("All") via the route.
-                                                        navController.navigate(
-                                                            Screen.FridgeScreen.withArgs(
-                                                                "All"
-                                                            )
-                                                        )
-                                                    },
-                                                // Use a neutral card background.
+                                                    .border(
+                                                        // If selected, draw a border to indicate selection.
+                                                        border = if (selectedFridgeIds.contains(fridge.id.toString()))
+                                                            BorderStroke(2.dp, Color.Red)
+                                                        else
+                                                            BorderStroke(0.dp, Color.Transparent),
+                                                        shape = RoundedCornerShape(16.dp)
+                                                    ),
                                                 colors = CardDefaults.cardColors(
                                                     containerColor = MaterialTheme.colorScheme.surface
                                                 ),
                                                 shape = RoundedCornerShape(16.dp),
-                                                elevation = CardDefaults.cardElevation(
-                                                    defaultElevation = 8.dp
-                                                )
+                                                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
                                             ) {
-                                                // Inside the card, display a fridge logo tinted with the fridge's color and its name.
                                                 Column(
                                                     modifier = Modifier
                                                         .fillMaxSize()
@@ -148,17 +164,11 @@ fun ManageFridgesScreen(navController: NavController, viewModel: FridgeViewModel
                                                     verticalArrangement = Arrangement.Center,
                                                     horizontalAlignment = Alignment.CenterHorizontally
                                                 ) {
-                                                    // Try parsing the fridge color; fallback to primary if error.
                                                     val tintColor = try {
-                                                        Color(
-                                                            android.graphics.Color.parseColor(
-                                                                fridge.color
-                                                            )
-                                                        )
+                                                        Color(android.graphics.Color.parseColor(fridge.color))
                                                     } catch (e: Exception) {
                                                         MaterialTheme.colorScheme.primary
                                                     }
-                                                    // Display the fridge icon tinted with the fridge's color.
                                                     Image(
                                                         painter = painterResource(id = R.drawable.fridge_icon_login),
                                                         contentDescription = "Fridge Icon",
@@ -180,14 +190,12 @@ fun ManageFridgesScreen(navController: NavController, viewModel: FridgeViewModel
                         }
                     }
                 } else {
-                    // Show message when no fridges exist.
                     Text(
                         text = "No fridges available.",
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.padding(vertical = 16.dp)
                     )
                 }
-
                 Spacer(modifier = Modifier.height(24.dp))
                 Button(onClick = { showCreateForm = true }) {
                     Text("Create New Fridge")
@@ -269,11 +277,33 @@ fun ManageFridgesScreen(navController: NavController, viewModel: FridgeViewModel
                         }
                     }
                 }
+
+                // Show Delete Selected button when in multi-select mode.
+                if (multiSelectMode && selectedFridgeIds.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Button(
+                        onClick = {
+                            // Call the ViewModel function to delete the selected fridges.
+                            viewModel.deleteFridges(selectedFridgeIds) { success, message ->
+                                if (success) {
+                                    Toast.makeText(context, "Fridges deleted", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, message ?: "Deletion failed", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            selectedFridgeIds.clear()
+                            multiSelectMode = false
+                        },
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        Text("Delete Selected (${selectedFridgeIds.size})")
+                    }
+                }
             }
         }
     }
 }
-
 
 @Composable
 fun ColorPicker(selectedColor: String, onColorSelected: (String) -> Unit) {

@@ -56,6 +56,9 @@ data class FridgeOwnerResponse(
     val owner_name: String?
 )
 
+data class DeleteFridgesRequest(
+    val fridge_ids: List<String>
+)
 
 interface FridgeApiService {
 
@@ -106,5 +109,10 @@ interface FridgeApiService {
     suspend fun getFridgeOwner(
         @Query("fridge_id") fridgeId: String
     ): Response<FridgeOwnerResponse>
+
+    @POST("/api/fridges/remove")
+    suspend fun deleteFridges(
+        @Body request: DeleteFridgesRequest
+    ): Response<GenericResponse>
 
 }

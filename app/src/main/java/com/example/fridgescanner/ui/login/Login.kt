@@ -49,8 +49,15 @@ fun LoginScreen(navController: NavController, viewModel: FridgeViewModel) {
     var passwordVisible by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
+    // State for error messages.
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+
     // Called when the Login button is clicked.
     fun onLoginClicked() {
+        // Clear previous error message.
+        errorMessage = null
+
         // Call the loginUser function defined in the ViewModel.
         viewModel.loginUser(username, password) { success, message ->
             Log.d("MyTag", "success = $success")
@@ -73,8 +80,14 @@ fun LoginScreen(navController: NavController, viewModel: FridgeViewModel) {
 //                    popUpTo(Screen.LoginScreen.route) { inclusive = true }
 //                }
             } else {
-                // Login failed; show an error message.
-                Toast.makeText(context, message ?: "Login failed", Toast.LENGTH_LONG).show()
+                val transformedMessage = when {
+                    message?.contains("401") == true -> "Wrong Password"
+                    message?.contains("404") == true -> "User not Found"
+                    else -> message ?: "Login failed"
+                }
+                // Update error state and optionally show a Toast.
+                errorMessage = transformedMessage
+                Toast.makeText(context, transformedMessage, Toast.LENGTH_LONG).show()
             }
         }
     }
