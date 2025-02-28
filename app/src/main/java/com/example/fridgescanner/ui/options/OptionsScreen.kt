@@ -45,12 +45,12 @@ fun OptionsScreen(
             verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             // Notifications
-            Text(text = "Notifications", style = MaterialTheme.typography.titleMedium)
+            Text(text = "Fridge Sharing", style = MaterialTheme.typography.titleMedium)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Text("Enable Notifications", style = MaterialTheme.typography.bodyMedium)
+                Text("Enable Fridge Sharing", style = MaterialTheme.typography.bodyMedium)
                 Switch(
                     checked = notificationsEnabled,
                     onCheckedChange = { /* handle notifications logic */ }
